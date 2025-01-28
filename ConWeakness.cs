@@ -1,0 +1,3 @@
+public class ConWeakness : BaseDebuff
+{
+}
