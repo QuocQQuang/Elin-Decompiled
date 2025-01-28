@@ -1,0 +1,24 @@
+public enum Emo2
+{
+	none,
+	happy,
+	insane,
+	poison,
+	bleeding,
+	blind,
+	silence,
+	confused,
+	fear,
+	speeing,
+	paralyzed,
+	restock,
+	blessing,
+	fur,
+	hint,
+	fur2,
+	baby,
+	brush_hate,
+	brush_like,
+	brush_like2,
+	brush_like3
+}
