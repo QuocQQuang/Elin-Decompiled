@@ -208,7 +208,7 @@ public class Thing : Card
 			{
 				num = EClass.rnd(2) + 1;
 			}
-			if (num > 0 && !HasTag(CTAG.godArtifact))
+			if (num > 0 && !HasTag(CTAG.godArtifact) && !HasTag(CTAG.noRandomEnc))
 			{
 				for (int i = 0; i < num; i++)
 				{
@@ -413,7 +413,7 @@ public class Thing : Card
 				SetBase(65, source.defense[1] / 3);
 			}
 		}
-		if (base.IsEquipmentOrRanged || base.IsAmmo)
+		if (base.IsEquipmentOrRangedOrAmmo)
 		{
 			if (base.IsWeapon || base.IsAmmo)
 			{
@@ -503,7 +503,7 @@ public class Thing : Card
 		string text6 = source.GetText("unit");
 		ArticleStyle style2 = ((style == NameStyle.FullNoArticle) ? ArticleStyle.None : ArticleStyle.Default);
 		bool num2 = base.IsIdentified || source.unknown.IsEmpty();
-		bool isEquipmentOrRanged = base.IsEquipmentOrRanged;
+		bool isEquipmentOrRangedOrAmmo = base.IsEquipmentOrRangedOrAmmo;
 		bool flag = Lang.setting.nameStyle == 0;
 		if (num2)
 		{
@@ -524,11 +524,11 @@ public class Thing : Card
 			{
 				text = id;
 			}
-			if (!isEquipmentOrRanged || !base.IsIdentified || base.rarity < Rarity.Legendary)
+			if (!isEquipmentOrRangedOrAmmo || !base.IsIdentified || base.rarity < Rarity.Legendary)
 			{
 				if (source.naming == "m" || (source.naming == "ms" && base.material != source.DefaultMaterial))
 				{
-					if (isEquipmentOrRanged)
+					if (isEquipmentOrRangedOrAmmo)
 					{
 						string[] textArray = base.material.GetTextArray("altName");
 						if (textArray != null && textArray.Length >= 2)
@@ -655,13 +655,13 @@ public class Thing : Card
 				case Rarity.Artifact:
 					style2 = ArticleStyle.None;
 					text3 = "★";
-					text = (isEquipmentOrRanged ? text.Bracket(3) : text);
+					text = (isEquipmentOrRangedOrAmmo ? text.Bracket(3) : text);
 					break;
 				case Rarity.Legendary:
 				case Rarity.Mythical:
 					style2 = ArticleStyle.The;
 					text3 = "☆";
-					if (isEquipmentOrRanged)
+					if (isEquipmentOrRangedOrAmmo)
 					{
 						Rand.UseSeed(base.uid + EClass.game.seed, delegate
 						{
@@ -841,24 +841,24 @@ public class Thing : Card
 			CheckJustCooked();
 		}
 		n.Clear();
-		string text = "";
+		string text2 = "";
 		TraitAbility traitAbility = trait as TraitAbility;
-		bool showEQStats = base.IsEquipmentOrRanged || base.IsAmmo;
+		bool showEQStats = base.IsEquipmentOrRangedOrAmmo;
 		bool flag = mode == IInspect.NoteMode.Product;
 		bool flag2 = base.IsIdentified || flag;
-		text = base.Name;
+		text2 = base.Name;
 		if (base.rarity == Rarity.Legendary || base.rarity == Rarity.Mythical)
 		{
-			string text2 = (text.Contains("『") ? "『" : (text.Contains("《") ? "《" : ""));
-			if (text2 != "")
+			string text3 = (text2.Contains("『") ? "『" : (text2.Contains("《") ? "《" : ""));
+			if (text3 != "")
 			{
-				string[] array = text.Split(text2);
-				text = array[0] + Environment.NewLine + text2 + array[1];
+				string[] array = text2.Split(text3);
+				text2 = array[0] + Environment.NewLine + text3 + array[1];
 			}
 		}
 		if (flag)
 		{
-			text = recipe.GetName();
+			text2 = recipe.GetName();
 		}
 		if (mode != IInspect.NoteMode.Recipe)
 		{
@@ -868,57 +868,57 @@ public class Thing : Card
 			}
 			else
 			{
-				UIItem uIItem = n.AddHeaderCard(text);
+				UIItem uIItem = n.AddHeaderCard(text2);
 				SetImage(uIItem.image2);
 				uIItem.image2.Rect().pivot = new Vector2(0.5f, 0.5f);
-				string text3 = base.Num.ToFormat() ?? "";
-				string text4 = (Mathf.Ceil(0.01f * (float)base.ChildrenAndSelfWeight) * 0.1f).ToString("F1") + "s";
+				string text4 = base.Num.ToFormat() ?? "";
+				string text5 = (Mathf.Ceil(0.01f * (float)base.ChildrenAndSelfWeight) * 0.1f).ToString("F1") + "s";
 				if (things.Count > 0)
 				{
-					text3 = text3 + " (" + things.Count + ")";
+					text4 = text4 + " (" + things.Count + ")";
 				}
 				if (base.ChildrenAndSelfWeight != SelfWeight)
 				{
-					text4 = text4 + " (" + (Mathf.Ceil(0.01f * (float)SelfWeight) * 0.1f).ToString("F1") + "s)";
+					text5 = text5 + " (" + (Mathf.Ceil(0.01f * (float)SelfWeight) * 0.1f).ToString("F1") + "s)";
 				}
-				text = "_quantity".lang(text3 ?? "", text4);
+				text2 = "_quantity".lang(text4 ?? "", text5);
 				if (flag && recipe != null && (bool)LayerCraft.Instance)
 				{
-					text = text + "  " + "_recipe_lv".lang(recipe.RecipeLv.ToString() ?? "");
+					text2 = text2 + "  " + "_recipe_lv".lang(recipe.RecipeLv.ToString() ?? "");
 				}
-				uIItem.text2.SetText(text);
+				uIItem.text2.SetText(text2);
 				if (showEQStats && flag2)
 				{
 					if (!flag)
 					{
-						text = "";
+						text2 = "";
 						if (DV != 0 || PV != 0 || base.HIT != 0 || base.DMG != 0 || Penetration != 0)
 						{
 							if (base.DMG != 0)
 							{
-								text = text + "DMG".lang() + ((base.DMG > 0) ? "+" : "") + base.DMG + ", ";
+								text2 = text2 + "DMG".lang() + ((base.DMG > 0) ? "+" : "") + base.DMG + ", ";
 							}
 							if (base.HIT != 0)
 							{
-								text = text + "HIT".lang() + ((base.HIT > 0) ? "+" : "") + base.HIT + ", ";
+								text2 = text2 + "HIT".lang() + ((base.HIT > 0) ? "+" : "") + base.HIT + ", ";
 							}
 							if (DV != 0)
 							{
-								text = text + "DV".lang() + ((DV > 0) ? "+" : "") + DV + ", ";
+								text2 = text2 + "DV".lang() + ((DV > 0) ? "+" : "") + DV + ", ";
 							}
 							if (PV != 0)
 							{
-								text = text + "PV".lang() + ((PV > 0) ? "+" : "") + PV + ", ";
+								text2 = text2 + "PV".lang() + ((PV > 0) ? "+" : "") + PV + ", ";
 							}
 							if (Penetration != 0)
 							{
-								text = text + "PEN".lang() + ((Penetration > 0) ? "+" : "") + Penetration + "%, ";
+								text2 = text2 + "PEN".lang() + ((Penetration > 0) ? "+" : "") + Penetration + "%, ";
 							}
-							text = text.TrimEnd(' ').TrimEnd(',');
+							text2 = text2.TrimEnd(' ').TrimEnd(',');
 						}
-						if (!text.IsEmpty())
+						if (!text2.IsEmpty())
 						{
-							n.AddText("NoteText_eqstats", text);
+							n.AddText("NoteText_eqstats", text2);
 						}
 					}
 					if (trait is TraitToolRange traitToolRange)
@@ -928,28 +928,28 @@ public class Thing : Card
 				}
 				else
 				{
-					string text5 = "";
+					string text6 = "";
 					if (EClass.debug.showExtra)
 					{
 						int totalQuality = GetTotalQuality();
 						int totalQuality2 = GetTotalQuality(applyBonus: false);
-						text5 = text5 + "Lv. " + base.LV + " TQ. " + GetTotalQuality() + ((totalQuality == totalQuality2) ? "" : (" (" + totalQuality2 + ")"));
+						text6 = text6 + "Lv. " + base.LV + " TQ. " + GetTotalQuality() + ((totalQuality == totalQuality2) ? "" : (" (" + totalQuality2 + ")"));
 					}
 					if (HasElement(10))
 					{
-						text5 = text5 + (text5.IsEmpty() ? "" : "  ") + "_nutrition".lang(Evalue(10).ToFormat() ?? "");
+						text6 = text6 + (text6.IsEmpty() ? "" : "  ") + "_nutrition".lang(Evalue(10).ToFormat() ?? "");
 					}
 					if ((base.category.IsChildOf("resource") || trait.IsTool) && !(trait is TraitAbility))
 					{
-						text5 = text5 + (text5.IsEmpty() ? "" : "  ") + "_hardness".lang(base.material.hardness.ToString() ?? "");
+						text6 = text6 + (text6.IsEmpty() ? "" : "  ") + "_hardness".lang(base.material.hardness.ToString() ?? "");
 					}
 					if (flag && recipe != null && (bool)LayerCraft.Instance)
 					{
-						text5 = text5 + (text5.IsEmpty() ? "" : "  ") + "_max_quality".lang(recipe.GetQualityBonus().ToString() ?? "");
+						text6 = text6 + (text6.IsEmpty() ? "" : "  ") + "_max_quality".lang(recipe.GetQualityBonus().ToString() ?? "");
 					}
-					if (!text5.IsEmpty())
+					if (!text6.IsEmpty())
 					{
-						n.AddText("NoteText_eqstats", text5);
+						n.AddText("NoteText_eqstats", text6);
 					}
 				}
 			}
@@ -990,9 +990,9 @@ public class Thing : Card
 		}
 		if (flag2)
 		{
-			n.AddText("isMadeOf".lang(base.material.GetText(), base.material.hardness.ToString() ?? ""));
+			AddTextWithIcon("isMadeOf".lang(base.material.GetText(), base.material.hardness.ToString() ?? ""), EClass.core.refs.icons.enc.mat, FontColor.Default);
 		}
-		n.AddText("isCategorized".lang(base.category.GetText()));
+		AddText("isCategorized".lang(base.category.GetText()), FontColor.Default);
 		if (base.category.skill != 0)
 		{
 			int key = base.category.skill;
@@ -1010,175 +1010,179 @@ public class Thing : Card
 				key = 305;
 				key2 = 304;
 			}
-			n.AddText("isUseSkill".lang(EClass.sources.elements.map[key].GetName().ToTitleCase(wholeText: true), EClass.sources.elements.map[key2].GetName().ToTitleCase(wholeText: true)));
+			AddText("isUseSkill".lang(EClass.sources.elements.map[key].GetName().ToTitleCase(wholeText: true), EClass.sources.elements.map[key2].GetName().ToTitleCase(wholeText: true)), FontColor.Default);
 		}
 		if (base.IsContainer)
 		{
-			n.AddText("isContainer".lang(things.MaxCapacity.ToString() ?? ""));
+			AddText("isContainer".lang(things.MaxCapacity.ToString() ?? ""), FontColor.Default);
 		}
 		if (base.c_lockLv != 0)
 		{
-			n.AddText((base.c_lockedHard ? "isLockedHard" : "isLocked").lang(base.c_lockLv.ToString() ?? ""), FontColor.Warning);
+			AddText((base.c_lockedHard ? "isLockedHard" : "isLocked").lang(base.c_lockLv.ToString() ?? ""), FontColor.Warning);
 		}
 		if (base.isCrafted && recipe == null)
 		{
-			n.AddText("isCrafted".lang());
+			AddText("isCrafted".lang(), FontColor.Default);
 		}
 		if (trait.Decay > 0)
 		{
-			string text6 = "";
-			text6 = (base.IsDecayed ? "isRotten" : (base.IsRotting ? "isRotting" : ((!base.IsFresn) ? "isNotFresh" : "isFresh")));
-			n.AddText(text6.lang());
+			string text7 = "";
+			text7 = (base.IsDecayed ? "isRotten" : (base.IsRotting ? "isRotting" : ((!base.IsFresn) ? "isNotFresh" : "isFresh")));
+			AddText(text7.lang(), FontColor.Default);
 		}
 		if (base.isDyed)
 		{
-			n.AddText("isDyed".lang());
+			AddText("isDyed".lang(), FontColor.Default);
 		}
 		if (base.IsEquipment)
 		{
-			text = "isEquipable".lang(Element.Get(base.category.slot).GetText());
-			n.AddText(text);
+			text2 = "isEquipable".lang(Element.Get(base.category.slot).GetText());
+			AddText(text2, FontColor.Default);
 		}
 		if (base.isFireproof)
 		{
-			n.AddText("isFreproof");
+			AddText("isFreproof", FontColor.Default);
 		}
 		if (base.isAcidproof)
 		{
-			n.AddText("isAcidproof");
+			AddText("isAcidproof", FontColor.Default);
 		}
 		if (trait.Electricity > 0)
 		{
-			n.AddText("isGenerateElectricity".lang(trait.Electricity.ToString() ?? ""));
+			AddText("isGenerateElectricity".lang(trait.Electricity.ToString() ?? ""), FontColor.Default);
 		}
 		if (trait.Electricity < 0)
 		{
-			n.AddText("isConsumeElectricity".lang(Mathf.Abs(trait.Electricity).ToString() ?? ""));
+			AddText("isConsumeElectricity".lang(Mathf.Abs(trait.Electricity).ToString() ?? ""), FontColor.Default);
 		}
 		if (base.IsUnique)
 		{
-			n.AddText("isPrecious");
+			AddText("isPrecious", FontColor.Default);
 		}
 		if (base.isCopy)
 		{
-			n.AddText("isCopy");
+			AddText("isCopy", FontColor.Default);
 		}
 		if (!trait.CanBeDestroyed)
 		{
-			n.AddText("isIndestructable");
+			AddText("isIndestructable", FontColor.Default);
 		}
 		if (GetInt(107) > 0)
 		{
-			n.AddText("isLicked");
+			AddText("isLicked", FontColor.Great);
+		}
+		if (HasRune())
+		{
+			AddTextWithIcon("isRuneAdded", EClass.core.refs.icons.enc.rune, FontColor.Great);
 		}
 		if (!base.c_idDeity.IsEmpty())
 		{
 			Religion religion = EClass.game.religions.Find(base.c_idDeity) ?? EClass.game.religions.Eyth;
-			n.AddText("isDeity".lang(religion.Name), FontColor.Myth);
+			AddText("isDeity".lang(religion.Name), FontColor.Myth);
 		}
 		if (base.isGifted && GetRoot() != EClass.pc)
 		{
-			n.AddText("isGifted", FontColor.Ether);
+			AddText("isGifted", FontColor.Ether);
 		}
 		if (base.isNPCProperty)
 		{
-			n.AddText("isNPCProperty", FontColor.Ether);
+			AddText("isNPCProperty", FontColor.Ether);
 		}
 		if (base.c_priceFix != 0)
 		{
-			n.AddText(((base.c_priceFix > 0) ? "isPriceUp" : "isPriceDown").lang(Mathf.Abs(base.c_priceFix).ToString() ?? ""), FontColor.Ether);
+			AddText(((base.c_priceFix > 0) ? "isPriceUp" : "isPriceDown").lang(Mathf.Abs(base.c_priceFix).ToString() ?? ""), FontColor.Ether);
 		}
 		if (base.noSell)
 		{
-			n.AddText("isNoSell", FontColor.Ether);
+			AddText("isNoSell", FontColor.Ether);
 		}
 		if (base.isStolen)
 		{
-			n.AddText("isStolen", FontColor.Ether);
+			AddText("isStolen", FontColor.Ether);
 		}
 		if (base.c_isImportant)
 		{
-			n.AddText("isMarkedImportant", FontColor.Ether);
+			AddText("isMarkedImportant", FontColor.Ether);
 		}
 		if (GetInt(25) != 0)
 		{
-			n.AddText("isDangerLv".lang((GetInt(25) + 1).ToString() ?? "", (EClass.pc.FameLv + 10).ToString() ?? ""));
+			AddText("isDangerLv".lang((GetInt(25) + 1).ToString() ?? "", (EClass.pc.FameLv + 10).ToString() ?? ""), FontColor.Default);
 		}
-		FontColor color = FontColor.Util;
+		FontColor col2 = FontColor.Util;
 		if (trait is TraitTool && !(trait is TraitToolRange))
 		{
 			if (HasElement(220))
 			{
-				n.AddText("canMine".lang(), color);
+				AddText("canMine".lang(), col2);
 			}
 			if (HasElement(225))
 			{
-				n.AddText("canLumberjack".lang(), color);
-				n.AddText("canLumberjack2".lang(), color);
+				AddText("canLumberjack".lang(), col2);
+				AddText("canLumberjack2".lang(), col2);
 			}
 			if (HasElement(230))
 			{
-				n.AddText("canDig", color);
+				AddText("canDig", col2);
 			}
 			if (HasElement(286))
 			{
-				n.AddText("canFarm", color);
+				AddText("canFarm", col2);
 			}
 			if (HasElement(245))
 			{
-				n.AddText("canFish", color);
+				AddText("canFish", col2);
 			}
 			if (HasElement(237))
 			{
-				n.AddText("canTame", color);
+				AddText("canTame", col2);
 			}
 		}
 		if (trait is TraitToolMusic)
 		{
-			n.AddText("canPlayMusic".lang(), color);
+			AddText("canPlayMusic".lang(), col2);
 		}
 		if (Lang.Has("hint_" + trait.ToString()))
 		{
-			n.AddText("hint_" + trait.ToString(), FontColor.Util);
+			AddText("hint_" + trait.ToString(), FontColor.Util);
 		}
 		if (Lang.Has("hint_" + trait.ToString() + "2"))
 		{
-			n.AddText("hint_" + trait.ToString() + "2", FontColor.Util);
+			AddText("hint_" + trait.ToString() + "2", FontColor.Util);
 		}
 		if (HasTag(CTAG.tourism))
 		{
-			n.AddText("isTourism", FontColor.Util);
+			AddText("isTourism", FontColor.Util);
 		}
 		string langPlaceType = base.TileType.LangPlaceType;
 		if (langPlaceType == "place_Door" || langPlaceType == "place_WallMount")
 		{
-			n.AddText(base.TileType.LangPlaceType + "_hint".lang(), FontColor.Util);
+			AddText(base.TileType.LangPlaceType + "_hint".lang(), FontColor.Util);
 		}
 		if (trait.IsHomeItem)
 		{
-			n.AddText("isHomeItem".lang(), FontColor.Util);
+			AddText("isHomeItem".lang(), FontColor.Util);
 		}
 		if (HasTag(CTAG.throwWeapon))
 		{
-			n.AddText("isThrowWeapon");
+			AddText("isThrowWeapon", FontColor.Default);
 		}
 		if (EClass.debug.showExtra && HasTag(CTAG.throwWeaponEnemy))
 		{
-			n.AddText("isThrowWeaponEnemy");
+			AddText("isThrowWeaponEnemy", FontColor.Default);
 		}
 		if (HasElement(10))
 		{
-			n.AddText("isEdible");
+			AddText("isEdible", FontColor.Default);
 		}
 		if (HasTag(CTAG.rareResource))
 		{
-			n.AddText("isRareResource", FontColor.Great);
+			AddText("isRareResource", FontColor.Great);
 		}
 		if (trait is TraitBed traitBed)
 		{
-			n.AddText("isBed".lang(traitBed.MaxHolders.ToString() ?? ""));
+			AddText("isBed".lang(traitBed.MaxHolders.ToString() ?? ""), FontColor.Default);
 		}
-		bool flag3 = base.IsEquipmentOrRanged || base.IsAmmo || base.IsThrownWeapon;
+		bool flag3 = base.IsEquipmentOrRangedOrAmmo || base.IsThrownWeapon;
 		if (flag2)
 		{
 			if (flag3)
@@ -1186,7 +1190,7 @@ public class Thing : Card
 				Element element = elements.GetElement(653);
 				if (element != null)
 				{
-					n.AddText("isAlive".lang(element.vBase.ToString() ?? "", (element.vExp / 10).ToString() ?? "", (element.ExpToNext / 10).ToString() ?? ""), FontColor.Great);
+					AddText("isAlive".lang(element.vBase.ToString() ?? "", (element.vExp / 10).ToString() ?? "", (element.ExpToNext / 10).ToString() ?? ""), FontColor.Great);
 				}
 				string[] rangedSubCats = new string[2] { "eleConvert", "eleAttack" };
 				elements.AddNote(n, delegate(Element e)
@@ -1204,22 +1208,22 @@ public class Thing : Card
 						return false;
 					}
 					return (!showEQStats || (e.id != 64 && e.id != 65 && e.id != 66 && e.id != 67)) ? true : false;
-				});
+				}, null, ElementContainer.NoteMode.Default, addRaceFeat: false, (Element e, string s) => (mode != IInspect.NoteMode.Info) ? s : (s + " (" + e.Value + ")"));
 			}
 			if (sockets != null)
 			{
 				foreach (int socket in sockets)
 				{
-					n.AddText((socket == 0) ? "emptySocket".lang() : "socket".lang(EClass.sources.elements.map[socket / 100].GetName(), (socket % 100).ToString() ?? ""), FontColor.Gray);
+					AddText((socket == 0) ? "emptySocket".lang() : "socket".lang(EClass.sources.elements.map[socket / 100].GetName(), (socket % 100).ToString() ?? ""), FontColor.Gray);
 				}
 			}
 		}
 		else
 		{
-			n.AddText("isUnidentified".lang(), FontColor.Flavor);
+			AddText("isUnidentified".lang(), FontColor.Flavor);
 			if (base.c_IDTState == 1)
 			{
-				n.AddText("isUnidentified2".lang(), FontColor.Flavor);
+				AddText("isUnidentified2".lang(), FontColor.Flavor);
 			}
 		}
 		trait.WriteNote(n, flag2);
@@ -1234,11 +1238,11 @@ public class Thing : Card
 			}
 			elements.AddNote(n, (Element e) => list.Contains(e), null, ElementContainer.NoteMode.Trait, addRaceFeat: false, delegate(Element e, string s)
 			{
-				string text7 = s;
-				string text8 = e.source.GetText("textExtra");
-				if (!text8.IsEmpty())
+				string text8 = s;
+				string text9 = e.source.GetText("textExtra");
+				if (!text9.IsEmpty())
 				{
-					string text9 = "";
+					string text10 = "";
 					if (e.id == 2 && mode == IInspect.NoteMode.Product)
 					{
 						int num = recipe.GetQualityBonus() / 10;
@@ -1246,18 +1250,18 @@ public class Thing : Card
 						{
 							num++;
 						}
-						text9 = "qualityLimit".lang(num.ToString() ?? "");
+						text10 = "qualityLimit".lang(num.ToString() ?? "");
 					}
 					int num2 = e.Value / 10;
 					num2 = ((e.Value < 0) ? (num2 - 1) : (num2 + 1));
-					text8 = "Lv." + num2 + text9 + " " + text8;
+					text9 = "Lv." + num2 + text10 + " " + text9;
 					if (infoMode && e.IsFoodTraitMain)
 					{
-						text8 += "traitAdditive".lang();
+						text9 += "traitAdditive".lang();
 					}
-					text7 += (" <size=12>" + text8 + "</size>").TagColor(FontColor.Passive);
+					text8 += (" <size=12>" + text9 + "</size>").TagColor(FontColor.Passive);
 				}
-				return text7;
+				return text8;
 			}, delegate
 			{
 			});
@@ -1265,37 +1269,37 @@ public class Thing : Card
 			{
 				if (FoodEffect.IsHumanFlesh(this))
 				{
-					n.AddText("foodHuman".lang(), FontColor.Ether);
+					AddText("foodHuman".lang(), FontColor.Ether);
 				}
 				if (FoodEffect.IsUndeadFlesh(this))
 				{
-					n.AddText("foodUndead".lang(), FontColor.Ether);
+					AddText("foodUndead".lang(), FontColor.Ether);
 				}
 			}
 			if (list.Count != list2.Count)
 			{
-				n.AddText("traitOther".lang((list2.Count - list.Count).ToString() ?? ""));
+				AddText("traitOther".lang((list2.Count - list.Count).ToString() ?? ""), FontColor.Default);
 			}
 			if (mode == IInspect.NoteMode.Product && HasTag(CTAG.dish_bonus))
 			{
 				n.AddHeader("HeaderAdditionalTrait", "additional_trait");
 				source.model.elements.AddNote(n, (Element e) => e.IsFoodTraitMain, null, ElementContainer.NoteMode.Trait, addRaceFeat: false, delegate(Element e, string s)
 				{
-					string text10 = s;
-					string text11 = e.source.GetText("textExtra");
-					if (!text11.IsEmpty())
+					string text11 = s;
+					string text12 = e.source.GetText("textExtra");
+					if (!text12.IsEmpty())
 					{
-						string text12 = "";
+						string text13 = "";
 						int num3 = e.Value / 10;
 						num3 = ((e.Value < 0) ? (num3 - 1) : (num3 + 1));
-						text11 = "Lv." + num3 + text12 + " " + text11;
+						text12 = "Lv." + num3 + text13 + " " + text12;
 						if (infoMode && e.IsFoodTraitMain)
 						{
-							text11 += "traitAdditive".lang();
+							text12 += "traitAdditive".lang();
 						}
-						text10 += (" <size=12>" + text11 + "</size>").TagColor(FontColor.Passive);
+						text11 += (" <size=12>" + text12 + "</size>").TagColor(FontColor.Passive);
 					}
-					return text10;
+					return text11;
 				});
 			}
 		}
@@ -1310,11 +1314,11 @@ public class Thing : Card
 		}
 		if (id == "statue_weird")
 		{
-			n.AddText("weirdStatue");
+			AddText("weirdStatue", FontColor.Default);
 		}
 		if (base.isReplica)
 		{
-			n.AddText("isReplica", FontColor.Passive);
+			AddText("isReplica", FontColor.Passive);
 		}
 		if (flag2)
 		{
@@ -1331,9 +1335,9 @@ public class Thing : Card
 			{
 				n.AddHeader("headerAttackEval");
 				AttackProcess.Current.Prepare(chara ?? EClass.pc, this, null, null, 0, base.IsThrownWeapon);
-				string text13 = AttackProcess.Current.GetText();
-				text13 = text13.TagColor(() => true);
-				n.AddText(text13);
+				string text14 = AttackProcess.Current.GetText();
+				text14 = text14.TagColor(() => true);
+				n.AddText(text14);
 			}
 		}
 		if (base.ammoData != null)
@@ -1354,6 +1358,16 @@ public class Thing : Card
 			}
 		}
 		n.Build();
+		void AddText(string text, FontColor col)
+		{
+			n.AddText("NoteText_enc", text, col);
+		}
+		void AddTextWithIcon(string text, Sprite sprite, FontColor col)
+		{
+			UIItem uIItem2 = n.AddText("NoteText_enc", text, col);
+			uIItem2.image1.SetActive(enable: true);
+			uIItem2.image1.sprite = sprite;
+		}
 	}
 
 	public static void AddAttackEvaluation(UINote n, Chara chara, Thing current = null)
@@ -1877,10 +1891,11 @@ public class Thing : Card
 
 	public void TryLickEnchant(Chara c, bool msg = true, Chara tg = null, BodySlot slot = null)
 	{
-		if (!base.IsEquipmentOrRanged || base.IsCursed || base.rarity <= Rarity.Normal || GetInt(107) > 0)
+		if (!base.IsEquipment || base.IsCursed || base.rarity <= Rarity.Normal || GetInt(107) > 0)
 		{
 			return;
 		}
+		SetInt(107, 1);
 		if (tg == null)
 		{
 			Rand.SetSeed(EClass.world.date.day + source._index + c.uid);
@@ -1890,7 +1905,11 @@ public class Thing : Card
 				PlaySound("offering");
 				PlayEffect("mutation");
 			}
-			AddEnchant(base.LV);
+			Element element = AddEnchant(base.LV);
+			if (element != null)
+			{
+				SetInt(107, element.id);
+			}
 		}
 		else
 		{
@@ -1905,8 +1924,9 @@ public class Thing : Card
 			}
 			if (list.Count > 0)
 			{
-				Element element = list.RandomItem();
-				elements.ModBase(element.id, Mathf.Max(EClass.rnd(Mathf.Abs(element.vBase / 5)), 1));
+				Element element2 = list.RandomItem();
+				elements.ModBase(element2.id, Mathf.Max(EClass.rnd(Mathf.Abs(element2.vBase / 5)), 1));
+				SetInt(107, element2.id);
 			}
 			if (msg)
 			{
@@ -1916,7 +1936,6 @@ public class Thing : Card
 			}
 		}
 		Rand.SetSeed();
-		SetInt(107, 1);
 	}
 
 	public Element AddEnchant(int lv = -1)
@@ -1955,7 +1974,7 @@ public class Thing : Card
 			IDTSource.Skill => Rarity.Superior, 
 			_ => Rarity.Normal, 
 		};
-		if (rarity != 0 && ((base.IsEquipmentOrRanged && base.rarity >= rarity) || base.rarity >= Rarity.Mythical))
+		if (rarity != 0 && ((base.IsEquipmentOrRangedOrAmmo && base.rarity >= rarity) || base.rarity >= Rarity.Mythical))
 		{
 			base.c_IDTState = 3;
 		}

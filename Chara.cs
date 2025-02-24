@@ -1356,7 +1356,6 @@ public class Chara : Card, IPathfindWalker
 		if (source.mainElement.Length != 0)
 		{
 			int _genLv = Mathf.Min(genLv, 100);
-			Debug.Log(genLv + "/" + _genLv);
 			List<Tuple<string, int, int>> list = new List<Tuple<string, int, int>>();
 			string[] mainElement = source.mainElement;
 			for (int i = 0; i < mainElement.Length; i++)
@@ -1452,7 +1451,7 @@ public class Chara : Card, IPathfindWalker
 			}
 			break;
 		}
-		if (source.tag.Contains("random_color"))
+		if (HasTag(CTAG.random_color))
 		{
 			DyeRandom();
 		}
@@ -1782,6 +1781,9 @@ public class Chara : Card, IPathfindWalker
 		case EditorTag.Female:
 			bio.SetGender(1);
 			base.c_idPortrait = Portrait.GetRandomPortrait(1, GetIdPortraitCat());
+			break;
+		case EditorTag.baby:
+			SetFeat(1232);
 			break;
 		}
 		base.ApplyEditorTags(tag);
@@ -2468,7 +2470,7 @@ public class Chara : Card, IPathfindWalker
 				}
 				if (newPoint.cell.CanSuffocate())
 				{
-					AddCondition<ConSuffocation>((EClass.pc.Evalue(200) > 0) ? (2000 / (100 + Evalue(200) * 10)) : 30);
+					AddCondition<ConSuffocation>((EClass.pc.Evalue(200) != 0) ? (2000 / (100 + EvalueMax(200, -5) * 10)) : 30);
 					int num4 = GetCondition<ConSuffocation>()?.GetPhase() ?? 0;
 					if (num4 >= 2)
 					{
@@ -2860,11 +2862,16 @@ public class Chara : Card, IPathfindWalker
 
 	public void TryPush(Point point)
 	{
-		point.Charas.ForeachReverse(delegate(Chara c)
+		List<Chara> list = point.ListCharas();
+		if (list.Count == 0)
+		{
+			return;
+		}
+		list.Copy().ForeachReverse(delegate(Chara c)
 		{
 			if (!c.ai.IsMoveAI && !c.IsPC && c.trait.CanBePushed && c != this && !c.noMove && (!EClass._zone.IsRegion || c.IsPCFactionOrMinion))
 			{
-				List<Point> list = new List<Point>();
+				List<Point> list2 = new List<Point>();
 				for (int i = point.x - 1; i <= point.x + 1; i++)
 				{
 					for (int j = point.z - 1; j <= point.z + 1; j++)
@@ -2874,24 +2881,24 @@ public class Chara : Card, IPathfindWalker
 							Point point2 = new Point(i, j);
 							if (point2.IsValid && !point2.HasChara && !point2.IsBlocked && !point2.cell.hasDoor && !point2.IsBlockByHeight(point))
 							{
-								list.Add(point2);
+								list2.Add(point2);
 							}
 						}
 					}
 				}
-				if (list.Count > 0)
+				if (list2.Count > 0)
 				{
-					if (list.Count > 1)
+					if (list2.Count > 1)
 					{
-						list.ForeachReverse(delegate(Point p)
+						list2.ForeachReverse(delegate(Point p)
 						{
 							if (p.Equals(new Point(point.x + point.x - pos.x, point.z + point.z - pos.z)))
 							{
-								list.Remove(p);
+								list2.Remove(p);
 							}
 						});
 					}
-					Point newPoint = list.RandomItem();
+					Point newPoint = list2.RandomItem();
 					if (IsPC)
 					{
 						Say("displace", this, c);
@@ -3744,7 +3751,7 @@ public class Chara : Card, IPathfindWalker
 		}
 		if (IsPC && !EClass._zone.IsRegion && cell2.CanSuffocate())
 		{
-			AddCondition<ConSuffocation>(800 / (100 + Evalue(200) * 10));
+			AddCondition<ConSuffocation>(800 / (100 + EvalueMax(200, -5) * 10));
 		}
 		CellEffect e;
 		if (cell2.effect != null)
@@ -4389,7 +4396,11 @@ public class Chara : Card, IPathfindWalker
 		}
 		for (int k = 0; k < ((!(race.id == "mutant")) ? 1 : (2 + base.LV / 30)); k++)
 		{
-			if (!job.weapon.IsEmpty())
+			if (source.ContainsTag("boxer"))
+			{
+				EQ_CAT("martial");
+			}
+			else if (!job.weapon.IsEmpty())
 			{
 				if (race.id == "mutant" || (body.slotMainHand != null && body.slotMainHand.thing == null))
 				{
@@ -4965,22 +4976,22 @@ public class Chara : Card, IPathfindWalker
 		{
 			EClass.player.doneBackers.Add(base.sourceBacker.id);
 		}
-		if (IsPCParty)
+		if (base.IsPCFactionOrMinion)
 		{
-			if (!IsPC)
+			if (!IsPC && !IsMinion && EClass.game.config.autoCombat.abortOnAllyDead && EClass.player.TryAbortAutoCombat())
 			{
-				EClass.pc.party.RemoveMember(this);
-				base.c_wasInPcParty = true;
-				EClass.pc.Say("allyDead");
-				if (EClass.game.config.autoCombat.abortOnAllyDead && EClass.player.TryAbortAutoCombat())
-				{
-					Msg.Say("abort_allyDead");
-				}
+				Msg.Say("abort_allyDead");
 			}
 		}
 		else if (EClass.game.config.autoCombat.abortOnEnemyDead && EClass.player.TryAbortAutoCombat())
 		{
 			Msg.Say("abort_enemyDead");
+		}
+		if (IsPCParty && !IsPC)
+		{
+			EClass.pc.party.RemoveMember(this);
+			base.c_wasInPcParty = true;
+			EClass.pc.Say("allyDead");
 		}
 		text4 = id;
 		if (!(text4 == "littleOne"))
@@ -5176,6 +5187,7 @@ public class Chara : Card, IPathfindWalker
 		a.GetPower(this);
 		int n = 1;
 		int num2 = 0;
+		bool flag = a.IsTargetHostileParty();
 		if (IsPC && HasCondition<StanceManaCost>())
 		{
 			num2 = Evalue(1657);
@@ -5188,10 +5200,20 @@ public class Chara : Card, IPathfindWalker
 		if (pt)
 		{
 			n = 0;
-			ForeachParty(delegate
+			if (flag)
 			{
-				n++;
-			});
+				ForeachEnemy(delegate
+				{
+					n++;
+				});
+			}
+			else
+			{
+				ForeachParty(delegate
+				{
+					n++;
+				});
+			}
 		}
 		if (a is Spell && IsPC && a.vPotential < n)
 		{
@@ -5348,14 +5370,24 @@ public class Chara : Card, IPathfindWalker
 			RemoveCondition<ConInvisibility>();
 			return true;
 		}
-		bool flag = true;
+		bool flag2 = true;
 		if (pt)
 		{
 			Act.forcePt = true;
-			ForeachParty(delegate(Chara c)
+			if (flag)
 			{
-				a.Perform(this, c, c.pos);
-			});
+				ForeachEnemy(delegate(Chara c)
+				{
+					a.Perform(this, c, c.pos);
+				});
+			}
+			else
+			{
+				ForeachParty(delegate(Chara c)
+				{
+					a.Perform(this, c, c.pos);
+				});
+			}
 			Act.forcePt = false;
 		}
 		else
@@ -5368,10 +5400,10 @@ public class Chara : Card, IPathfindWalker
 				}
 				ActEffect.RapidCount = i;
 				ActEffect.RapidDelay = a.RapidDelay;
-				flag = a.Perform(this, tc, pos);
+				flag2 = a.Perform(this, tc, pos);
 			}
 		}
-		if (flag && !isDead && cost.cost > 0 && a.source.lvFactor > 0)
+		if (flag2 && !isDead && cost.cost > 0 && a.source.lvFactor > 0)
 		{
 			ModExp(a.id, spellExp);
 		}
@@ -5380,41 +5412,59 @@ public class Chara : Card, IPathfindWalker
 		{
 			AddCooldown(a.id, a.source.cooldown);
 		}
-		if (flag && !a.source.tag.Contains("keepInvisi") && EClass.rnd(2) == 0)
+		if (flag2 && !a.source.tag.Contains("keepInvisi") && EClass.rnd(2) == 0)
 		{
 			RemoveCondition<ConInvisibility>();
 		}
-		return flag;
+		return flag2;
+		void ForeachEnemy(Action<Chara> action)
+		{
+			if (_pts.Count == 0)
+			{
+				for (int num5 = EClass._map.charas.Count - 1; num5 >= 0; num5--)
+				{
+					Chara chara = EClass._map.charas[num5];
+					if (chara != this && CanSeeLos(chara) && chara.IsHostile(this))
+					{
+						_pts.Add(chara);
+					}
+				}
+			}
+			for (int num6 = _pts.Count - 1; num6 >= 0; num6--)
+			{
+				action(_pts[num6]);
+			}
+		}
 		void ForeachParty(Action<Chara> action)
 		{
 			if (_pts.Count == 0)
 			{
 				if (IsPCParty)
 				{
-					for (int num5 = EClass.pc.party.members.Count - 1; num5 >= 0; num5--)
+					for (int num7 = EClass.pc.party.members.Count - 1; num7 >= 0; num7--)
 					{
-						Chara chara = EClass.pc.party.members[num5];
-						if (chara == this || chara.host != null || CanSeeLos(chara))
-						{
-							_pts.Add(chara);
-						}
-					}
-				}
-				else
-				{
-					for (int num6 = EClass._map.charas.Count - 1; num6 >= 0; num6--)
-					{
-						Chara chara2 = EClass._map.charas[num6];
-						if ((chara2 == this || (chara2.IsFriendOrAbove(this) && CanSeeLos(chara2))) && (chara2 == tc || _pts.Count < 3 || EClass.rnd(_pts.Count * _pts.Count) > 6))
+						Chara chara2 = EClass.pc.party.members[num7];
+						if (chara2 == this || chara2.host != null || CanSeeLos(chara2))
 						{
 							_pts.Add(chara2);
 						}
 					}
 				}
+				else
+				{
+					for (int num8 = EClass._map.charas.Count - 1; num8 >= 0; num8--)
+					{
+						Chara chara3 = EClass._map.charas[num8];
+						if ((chara3 == this || (chara3.IsFriendOrAbove(this) && CanSeeLos(chara3))) && (chara3 == tc || _pts.Count < 3 || EClass.rnd(_pts.Count * _pts.Count) > 6))
+						{
+							_pts.Add(chara3);
+						}
+					}
+				}
 			}
-			for (int num7 = _pts.Count - 1; num7 >= 0; num7--)
+			for (int num9 = _pts.Count - 1; num9 >= 0; num9--)
 			{
-				action(_pts[num7]);
+				action(_pts[num9]);
 			}
 		}
 	}
@@ -5647,7 +5697,7 @@ public class Chara : Card, IPathfindWalker
 				{
 					foreach (Chara member in EClass.pc.party.members)
 					{
-						if (member != EClass.pc && member.enemy == null)
+						if (member != EClass.pc && member.enemy == null && member.CanSee(chara))
 						{
 							member.SetEnemy(chara);
 						}
@@ -5658,7 +5708,7 @@ public class Chara : Card, IPathfindWalker
 			{
 				foreach (Chara member2 in EClass.pc.party.members)
 				{
-					if (member2 != EClass.pc && member2.enemy == null)
+					if (member2 != EClass.pc && member2.enemy == null && member2.CanSee(this))
 					{
 						member2.SetEnemy(this);
 					}
@@ -5715,33 +5765,49 @@ public class Chara : Card, IPathfindWalker
 		int num = (base.PER + Evalue(210) * 2) * ((!flag) ? 1 : 2);
 		bool flag2 = IsPCParty && !IsPC && EClass.game.config.tactics.dontWander;
 		bool flag3 = !IsPCParty;
+		Chara chara = null;
+		int num2 = 9999;
 		for (int i = 0; i < EClass._map.charas.Count; i++)
 		{
-			Chara chara = EClass._map.charas[i];
-			if (chara == this || !IsHostile(chara) || !CanSee(chara))
+			Chara chara2 = EClass._map.charas[i];
+			if (chara2 == this || !IsHostile(chara2) || !CanSee(chara2))
 			{
 				continue;
 			}
-			int num2 = Dist(chara);
-			int num3 = GetSightRadius() + (flag ? 1 : 0);
-			if (num2 > num3)
+			int num3 = Dist(chara2);
+			int num4 = GetSightRadius() + (flag ? 1 : 0);
+			if (num3 > num4)
 			{
 				continue;
 			}
-			if (flag3 && EClass.rnd(chara.Evalue(152) + 5) * (100 + num2 * num2 * 10) / 100 > EClass.rnd(num))
+			if (flag3 && EClass.rnd(chara2.Evalue(152) + 5) * (100 + num3 * num3 * 10) / 100 > EClass.rnd(num))
 			{
 				if (this == pos.FirstChara)
 				{
-					chara.ModExp(152, Mathf.Clamp((num - chara.Evalue(152)) / 2, 1, Mathf.Max(30 - stealthSeen * 2, 1)));
+					chara2.ModExp(152, Mathf.Clamp((num - chara2.Evalue(152)) / 2, 1, Mathf.Max(30 - stealthSeen * 2, 1)));
 				}
 				stealthSeen++;
 			}
-			else if (Los.IsVisible(pos.x, chara.pos.x, pos.z, chara.pos.z) && (!flag2 || EClass.pc.isBlind || EClass.pc.CanSeeLos(chara)) && (!IsPCFaction || EClass.pc.ai.ShouldAllyAttack(chara)))
+			else if (CanSeeLos(chara2) && (!flag2 || EClass.pc.isBlind || EClass.pc.CanSeeLos(chara2)) && (!IsPCFaction || EClass.pc.ai.ShouldAllyAttack(chara2)))
 			{
-				DoHostileAction(chara);
-				enemy = chara;
-				return true;
+				if (!IsPCParty)
+				{
+					DoHostileAction(chara2);
+					enemy = chara2;
+					return true;
+				}
+				if (num3 < num2)
+				{
+					num2 = num3;
+					chara = chara2;
+				}
 			}
+		}
+		if (chara != null)
+		{
+			DoHostileAction(chara);
+			enemy = chara;
+			return true;
 		}
 		return false;
 	}
@@ -6049,7 +6115,7 @@ public class Chara : Card, IPathfindWalker
 		}
 		if (EClass.pc.HasElement(481))
 		{
-			text2 += ("( " + faith.Name + ")").TagSize(14);
+			text2 += ("(" + faith.Name + ")").TagSize(14);
 		}
 		return text + text2 + s;
 	}
@@ -7017,6 +7083,15 @@ public class Chara : Card, IPathfindWalker
 			});
 			return true;
 		}
+		if (base.hp < MaxHP * 90 / 100)
+		{
+			Action healAction = t.trait.GetHealAction(this);
+			if (healAction != null)
+			{
+				healAction();
+				return true;
+			}
+		}
 		return false;
 	}
 
@@ -7346,7 +7421,7 @@ public class Chara : Card, IPathfindWalker
 			Msg.Say("affinityNone", c, this);
 			return;
 		}
-		if (!t.isCopy && t.IsCursed && t.IsEquipmentOrRanged && c.HasElement(1414))
+		if (!t.isCopy && t.IsCursed && t.IsEquipmentOrRanged && !t.IsAmmo && c.HasElement(1414))
 		{
 			bool num = t.blessedState == BlessedState.Doomed;
 			int num2 = 200 + t.LV * 3;
@@ -8617,6 +8692,10 @@ public class Chara : Card, IPathfindWalker
 			return false;
 		}
 		if (TC.HasElement(427))
+		{
+			return false;
+		}
+		if (TC.IsPC && EClass.player.invlunerable)
 		{
 			return false;
 		}

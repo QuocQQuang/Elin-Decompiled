@@ -155,9 +155,9 @@ public class AM_Adv : AM_BaseGameMode
 
 	private float gearAngle;
 
-	protected bool updatePlans;
+	public bool updatePlans;
 
-	protected bool isMoving;
+	public bool isMoving;
 
 	private Vector3 lastCamPos;
 
@@ -534,6 +534,7 @@ public class AM_Adv : AM_BaseGameMode
 			{
 				EClass.player.lastTurn = EClass.pc.turn;
 				EClass.player.invlunerable = false;
+				EClass.pc.RemoveCondition<ConInvulnerable>();
 				OnBecomeNoGoal();
 				if (!EClass.pc.HasNoGoal)
 				{

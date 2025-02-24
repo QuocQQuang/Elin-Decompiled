@@ -658,7 +658,7 @@ public class Recipe : EClass
 			}
 		}
 		case "Floor":
-			if (pos.sourceObj.tileType.RemoveOnFloorChange && (!BuildMenu.Instance || !EClass.debug.ignoreBuildRule))
+			if (pos.HasObj && pos.sourceObj.tileType.RemoveOnFloorChange && (!BuildMenu.Instance || !EClass.debug.ignoreBuildRule))
 			{
 				EClass._map.SetObj(pos.x, pos.z);
 			}
@@ -672,8 +672,8 @@ public class Recipe : EClass
 			EClass._map.SetBridge(pos.x, pos.z, Mathf.Clamp(bridgeHeight + altitude, 0, 255), mat, tileRow.id, dir);
 			break;
 		case "Obj":
-			EClass._map.SetObj(pos.x, pos.z, mat, tileRow.id, 1, dir);
-			if (tileType.ChangeBlockDir)
+			EClass._map.SetObj(pos.x, pos.z, mat, tileRow.id, 1, dir, ignoreRandomMat: true);
+			if (tileType.ChangeBlockDir || pos.growth is GrowSystemTreeSingle)
 			{
 				EClass._map.SetBlockDir(pos.x, pos.z, dir);
 			}
@@ -981,5 +981,44 @@ public class Recipe : EClass
 			list.Add(item);
 		}
 		EClass.player.recipes.lastIngredients[id] = list;
+	}
+
+	public QuestTrackCraft GetQuestTrack()
+	{
+		QuestTrackCraft result = null;
+		foreach (Quest item in EClass.game.quests.list)
+		{
+			if (item is QuestTrackCraft)
+			{
+				result = item as QuestTrackCraft;
+				break;
+			}
+		}
+		return result;
+	}
+
+	public void ToggleTrack(QuestTrackCraft quest)
+	{
+		if (quest != null && quest.idRecipe == id)
+		{
+			EClass.game.quests.Remove(quest);
+		}
+		else
+		{
+			if (quest != null)
+			{
+				EClass.game.quests.Remove(quest);
+			}
+			QuestTrackCraft questTrackCraft = Quest.Create("track_craft") as QuestTrackCraft;
+			questTrackCraft.SetRecipe(this);
+			EClass.game.quests.Start(questTrackCraft);
+		}
+		if (!WidgetQuestTracker.Instance)
+		{
+			EClass.player.questTracker = true;
+			EClass.ui.widgets.ActivateWidget("QuestTracker");
+			WidgetHotbar.RefreshButtons();
+		}
+		WidgetQuestTracker.Instance.Refresh();
 	}
 }

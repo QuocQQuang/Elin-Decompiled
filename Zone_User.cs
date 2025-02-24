@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Newtonsoft.Json;
 
@@ -19,4 +20,28 @@ public class Zone_User : Zone
 	public override int BaseElectricity => 1000;
 
 	public override bool RevealRoom => true;
+
+	public override void OnActivate()
+	{
+		base.OnActivate();
+		if (EClass._map.exportSetting == null || EClass._map.exportSetting.textWelcome.IsEmpty())
+		{
+			return;
+		}
+		WidgetMainText.Instance.NewLine();
+		string[] array = EClass._map.exportSetting.textWelcome.Replace("\\n", "").Split(Environment.NewLine.ToCharArray());
+		int num = 0;
+		string[] array2 = array;
+		foreach (string text in array2)
+		{
+			Msg.SetColor("save");
+			Msg.SayRaw("<i>" + text.Replace(Environment.NewLine, "") + "</i>");
+			WidgetMainText.Instance.NewLine();
+			num++;
+			if (num >= 5)
+			{
+				break;
+			}
+		}
+	}
 }

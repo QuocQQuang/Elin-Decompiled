@@ -53,6 +53,26 @@ public class CoreRef : ScriptableObject
 			public Sprite love;
 		}
 
+		[Serializable]
+		public class Enc
+		{
+			public Sprite mat;
+
+			public Sprite card;
+
+			public Sprite cat;
+
+			public Sprite enc;
+
+			public Sprite rune;
+
+			public Sprite trait;
+
+			public Sprite mod;
+
+			public Sprite weaponEnc;
+		}
+
 		public Sprite suspend;
 
 		public Sprite resume;
@@ -85,6 +105,8 @@ public class CoreRef : ScriptableObject
 
 		public Sprite trans;
 
+		public Sprite fav;
+
 		public Sprite noHotItem;
 
 		public Sprite defaultHotItem;
@@ -104,6 +126,8 @@ public class CoreRef : ScriptableObject
 		public Sprite personal;
 
 		public Affinity affnity;
+
+		public Enc enc;
 
 		public UDInvTab invTab;
 

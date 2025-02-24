@@ -33,16 +33,19 @@ public class ActRestrain : Act
 			return true;
 		}
 		SE.Change();
+		if (!shackle.owner.IsInstalled)
+		{
+			EClass._zone.AddCard(shackle.owner, Act.TP);
+			shackle.owner.SetPlaceState(PlaceState.installed);
+		}
 		shackle.Restrain(Act.TC, msg: true);
-		EClass._zone.AddCard(shackle.owner, Act.TP);
-		shackle.owner.SetPlaceState(PlaceState.installed);
 		if (!Act.TC.IsPCFaction)
 		{
 			EClass.player.ModKarma(-1);
 		}
-		if (Act.TC.IsPCFaction && EClass._zone.IsPCFaction)
+		if (Act.TC.IsPCFaction && EClass._zone.IsPCFaction && shackle.AllowTraining)
 		{
-			Act.CC.SetAI(new AI_Torture
+			Act.TC.Chara?.SetAI(new AI_Torture
 			{
 				shackle = shackle
 			});

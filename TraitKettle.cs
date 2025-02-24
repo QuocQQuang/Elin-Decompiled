@@ -48,13 +48,17 @@ public class TraitKettle : TraitUniqueChara
 
 	public override bool CanCopy(Thing t)
 	{
-		if (t.noSell || t.HasElement(1229))
+		if (t.noSell || t.HasRune() || t.HasElement(1229))
 		{
 			return false;
 		}
 		if (t.trait is TraitSeed)
 		{
 			return true;
+		}
+		if (t.HasElement(759))
+		{
+			return false;
 		}
 		if (t.sockets != null)
 		{

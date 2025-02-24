@@ -108,7 +108,7 @@ public class ElementContainer : EClass
 				continue;
 			}
 			Element orCreateElement = GetOrCreateElement(item.Key);
-			if (!orCreateElement.source.IsEncAppliable(t))
+			if (!orCreateElement.source.IsMaterialEncAppliable(t))
 			{
 				if (orCreateElement.vBase == 0 && orCreateElement.vSource == 0 && orCreateElement.vLink == 0 && orCreateElement.vExp == 0 && orCreateElement.vPotential == 0)
 				{
@@ -637,6 +637,11 @@ public class ElementContainer : EClass
 		return list;
 	}
 
+	public List<Element> ListRune()
+	{
+		return ListElements((Element a) => !a.source.encSlot.IsEmpty() && a.vBase + a.vSource != 0);
+	}
+
 	public void CopyTo(ElementContainer container)
 	{
 		container.dict.Clear();
@@ -758,9 +763,15 @@ public class ElementContainer : EClass
 					text = (flag6 ? "textEncSkill" : (flag7 ? "textEncEnc" : "textEnc")).lang(name, num + (e.source.tag.Contains("ratio") ? "%" : ""), ((e.Value > 0) ? "encIncrease" : "encDecrease").lang());
 				}
 				int num3 = ((!(e is Resistance)) ? 1 : 0);
+				int num4 = 5;
+				if (e.id == 484)
+				{
+					num3 = 0;
+					num4 = 1;
+				}
 				if (!flag && !flag2 && !e.source.tag.Contains("flag"))
 				{
-					text = text + " [" + "*".Repeat(Mathf.Clamp(num * e.source.mtp / 5 + num3, 1, 5)) + ((num * e.source.mtp / 5 + num3 > 5) ? "+" : "") + "]";
+					text = text + " [" + "*".Repeat(Mathf.Clamp(num * e.source.mtp / num4 + num3, 1, 5)) + ((num * e.source.mtp / num4 + num3 > 5) ? "+" : "") + "]";
 				}
 				if (e.HasTag("hidden"))
 				{
@@ -788,21 +799,51 @@ public class ElementContainer : EClass
 				{
 					text = funcText(e, text);
 				}
-				n.AddText("NoteText_prefwidth", text, color);
+				UIItem uIItem = n.AddText("NoteText_enc", text, color);
+				Sprite sprite = EClass.core.refs.icons.enc.enc;
+				Thing thing = Card?.Thing;
+				if (thing != null)
+				{
+					if (thing.material.HasEnc(e.id))
+					{
+						sprite = EClass.core.refs.icons.enc.mat;
+					}
+					foreach (int key in thing.source.elementMap.Keys)
+					{
+						if (key == e.id)
+						{
+							sprite = EClass.core.refs.icons.enc.card;
+						}
+					}
+					if (e.id == thing.GetInt(107))
+					{
+						sprite = EClass.core.refs.icons.enc.cat;
+					}
+					if (thing.GetRuneEnc(e.id) != null)
+					{
+						sprite = EClass.core.refs.icons.enc.rune;
+					}
+				}
+				if ((bool)sprite)
+				{
+					uIItem.image1.SetActive(enable: true);
+					uIItem.image1.sprite = sprite;
+				}
+				uIItem.image2.SetActive(e.source.IsWeaponEnc);
 				onAddNote?.Invoke(n, e);
 				continue;
 			}
 			}
-			UIItem uIItem = n.AddTopic("TopicAttribute", e.Name, "".TagColor((e.ValueWithoutLink > 0) ? SkinManager.CurrentColors.textGood : SkinManager.CurrentColors.textBad, e.ValueWithoutLink.ToString() ?? ""));
-			if ((bool)uIItem.button1)
+			UIItem uIItem2 = n.AddTopic("TopicAttribute", e.Name, "".TagColor((e.ValueWithoutLink > 0) ? SkinManager.CurrentColors.textGood : SkinManager.CurrentColors.textBad, e.ValueWithoutLink.ToString() ?? ""));
+			if ((bool)uIItem2.button1)
 			{
-				uIItem.button1.tooltip.onShowTooltip = delegate(UITooltip t)
+				uIItem2.button1.tooltip.onShowTooltip = delegate(UITooltip t)
 				{
 					e.WriteNote(t.note, EClass.pc.elements);
 				};
 			}
-			e.SetImage(uIItem.image1);
-			Image image = uIItem.image2;
+			e.SetImage(uIItem2.image1);
+			Image image = uIItem2.image2;
 			int value = (e.Potential - 80) / 20;
 			image.enabled = e.Potential != 80;
 			image.sprite = EClass.core.refs.spritesPotential[Mathf.Clamp(Mathf.Abs(value), 0, EClass.core.refs.spritesPotential.Count - 1)];

@@ -463,6 +463,18 @@ public class Zone : Spatial, ICardParent, IInspect
 
 	public bool IsPCFaction => base.mainFaction == EClass.pc.faction;
 
+	public bool IsPCFactionOrTent
+	{
+		get
+		{
+			if (base.mainFaction != EClass.pc.faction)
+			{
+				return EClass._zone is Zone_Tent;
+			}
+			return true;
+		}
+	}
+
 	public bool IsStartZone => this == EClass.game.StartZone;
 
 	public bool IsInstance => instance != null;
@@ -903,6 +915,10 @@ public class Zone : Spatial, ICardParent, IInspect
 			if (card.isChara)
 			{
 				Chara chara = card.Chara;
+				if (!card.isDyed && card.HasTag(CTAG.random_color))
+				{
+					card.DyeRandom();
+				}
 				if (card.IsUnique && !card.IsPCFaction && !card.IsPCParty)
 				{
 					Point point = chara.orgPos ?? card.pos;
@@ -1492,44 +1508,49 @@ public class Zone : Spatial, ICardParent, IInspect
 			{
 				Chara chara = c.parent as Chara;
 				c.currentZone = chara.currentZone;
-				continue;
 			}
-			c.isRestrained = false;
-			if (c.isDead)
+			else
 			{
-				continue;
-			}
-			if (c.global.transition != null)
-			{
-				Point pos = (c.IsPC ? spawnPosPC : (c.IsPCParty ? spawnPosPC.GetNearestPoint(allowBlock: false, allowChara: false, allowInstalled: true, ignoreCenter: true) : GetSpawnPos(c)));
-				if (c.IsPCParty && !c.IsPC)
+				if (c.isDead)
 				{
-					if (c.host == EClass.pc)
+					continue;
+				}
+				if (c.isRestrained && c.currentZone == EClass.pc.currentZone && (!c.pos.IsValid || c.pos.FindThing<TraitShackle>() == null))
+				{
+					c.isRestrained = false;
+				}
+				if (c.global.transition != null)
+				{
+					Point pos = (c.IsPC ? spawnPosPC : (c.IsPCParty ? spawnPosPC.GetNearestPoint(allowBlock: false, allowChara: false, allowInstalled: true, ignoreCenter: true) : GetSpawnPos(c)));
+					if (c.IsPCParty && !c.IsPC)
 					{
-						pos.Set(spawnPosPC);
-					}
-					else if (pos.Equals(spawnPosPC) || !PathManager.Instance.IsPathClear(spawnPosPC, pos, c, 5))
-					{
-						c.pos.Set(spawnPosPC);
-						if (!spawnPosPC.ForeachNearestPoint(delegate(Point p)
-						{
-							if (PathManager.Instance.IsPathClear(spawnPosPC, p, c, 10) && !p.Equals(spawnPosPC))
-							{
-								pos.Set(p);
-								return true;
-							}
-							return false;
-						}, allowBlock: false, EClass.pc.party.members.Count >= 12, allowInstalled: true, ignoreCenter: true, EClass._zone.IsRegion ? 2 : 6))
+						if (c.host == EClass.pc)
 						{
 							pos.Set(spawnPosPC);
 						}
+						else if (pos.Equals(spawnPosPC) || !PathManager.Instance.IsPathClear(spawnPosPC, pos, c, 5))
+						{
+							c.pos.Set(spawnPosPC);
+							if (!spawnPosPC.ForeachNearestPoint(delegate(Point p)
+							{
+								if (PathManager.Instance.IsPathClear(spawnPosPC, p, c, 10) && !p.Equals(spawnPosPC))
+								{
+									pos.Set(p);
+									return true;
+								}
+								return false;
+							}, allowBlock: false, EClass.pc.party.members.Count >= 12, allowInstalled: true, ignoreCenter: true, EClass._zone.IsRegion ? 2 : 6))
+							{
+								pos.Set(spawnPosPC);
+							}
+						}
 					}
+					c.pos.Set(pos);
+					c.global.transition = null;
 				}
-				c.pos.Set(pos);
-				c.global.transition = null;
+				map.charas.Add(c);
+				map.AddCardOnActivate(c);
 			}
-			map.charas.Add(c);
-			map.AddCardOnActivate(c);
 		}
 		foreach (Chara item in EClass.player.listSummon)
 		{
@@ -1900,6 +1921,11 @@ public class Zone : Spatial, ICardParent, IInspect
 				t.PlayAnimeLoot();
 			}
 			ignoreSpawnAnime = false;
+		}
+		if (chara != null && EClass.player != null && !chara.hasSpawned)
+		{
+			EClass.player.codex.AddSpawn(chara.id);
+			chara.hasSpawned = true;
 		}
 		return t;
 	}
@@ -2853,7 +2879,7 @@ public class Zone : Spatial, ICardParent, IInspect
 		List<Element> list2 = new List<Element>();
 		foreach (int landFeat in landFeats)
 		{
-			list2.Add(Element.Create(landFeat));
+			list2.Add(Element.Create(landFeat, 1));
 		}
 		return list2;
 	}

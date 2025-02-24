@@ -870,6 +870,18 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		}
 	}
 
+	public bool hasSpawned
+	{
+		get
+		{
+			return _bits2[8];
+		}
+		set
+		{
+			_bits2[8] = value;
+		}
+	}
+
 	public bool isBackerContent => c_idBacker != 0;
 
 	public SourceBacker.Row sourceBacker
@@ -1681,6 +1693,18 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		}
 	}
 
+	public List<SocketData> socketList
+	{
+		get
+		{
+			return GetObj<List<SocketData>>(17);
+		}
+		set
+		{
+			SetObj(17, value);
+		}
+	}
+
 	public Thing c_copyContainer
 	{
 		get
@@ -2030,7 +2054,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 	{
 		get
 		{
-			if (!IsFood && (Evalue(10) <= 0 || IsEquipmentOrRanged) && !category.IsChildOf("seed") && !(id == "pasture") && !(id == "grass"))
+			if (!IsFood && (Evalue(10) <= 0 || IsEquipmentOrRangedOrAmmo) && !category.IsChildOf("seed") && !(id == "pasture") && !(id == "grass"))
 			{
 				return category.IsChildOf("drug");
 			}
@@ -2057,6 +2081,18 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			if (category.slot == 0)
 			{
 				return IsRangedWeapon;
+			}
+			return true;
+		}
+	}
+
+	public bool IsEquipmentOrRangedOrAmmo
+	{
+		get
+		{
+			if (category.slot == 0 && !IsRangedWeapon)
+			{
+				return IsAmmo;
 			}
 			return true;
 		}
@@ -2395,6 +2431,15 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 	public int Evalue(int ele)
 	{
 		return elements.Value(ele);
+	}
+
+	public int Evalue(int ele, bool ignoreGlobalElement)
+	{
+		if (!ignoreGlobalElement || !HasGlobalElement(ele))
+		{
+			return elements.Value(ele);
+		}
+		return 0;
 	}
 
 	public int EvalueMax(int ele, int min = 0)
@@ -2969,6 +3014,10 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 
 	public void PurgeDuplicateArtifact(Thing af)
 	{
+		if (EClass.debug.enable)
+		{
+			return;
+		}
 		List<Chara> list = new List<Chara>();
 		foreach (FactionBranch child in EClass.pc.faction.GetChildren())
 		{
@@ -3012,7 +3061,18 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 	{
 		if ((GetRootCard() as Chara)?.held == thing)
 		{
-			(GetRootCard() as Chara).held = null;
+			Chara obj = GetRootCard() as Chara;
+			obj.held = null;
+			if (obj.IsPC)
+			{
+				WidgetCurrentTool instance = WidgetCurrentTool.Instance;
+				if ((bool)instance && instance.selected != -1 && instance.selectedButton.card != null && instance.selectedButton.card == thing)
+				{
+					instance.selectedButton.card = null;
+				}
+				EClass.player.RefreshCurrentHotItem();
+				ActionMode.AdvOrRegion.updatePlans = true;
+			}
 			RecalculateFOV();
 		}
 		dirtyWeight = true;
@@ -3276,6 +3336,100 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		}
 	}
 
+	public SocketData AddRune(Card rune)
+	{
+		return AddRune(rune.refVal, rune.encLV);
+	}
+
+	public SocketData AddRune(int idEle, int v)
+	{
+		if (socketList == null)
+		{
+			socketList = new List<SocketData>();
+		}
+		SourceElement.Row row = EClass.sources.elements.map[idEle];
+		SocketData socketData = new SocketData
+		{
+			idEle = idEle,
+			value = v,
+			type = SocketData.Type.Rune
+		};
+		socketList.Add(socketData);
+		if (IsWeapon || !row.IsWeaponEnc)
+		{
+			elements.SetTo(idEle, v);
+		}
+		return socketData;
+	}
+
+	public SocketData GetRuneEnc(int idEle)
+	{
+		if (socketList != null)
+		{
+			foreach (SocketData socket in socketList)
+			{
+				if (socket.type == SocketData.Type.Rune && socket.idEle == idEle)
+				{
+					return socket;
+				}
+			}
+		}
+		return null;
+	}
+
+	public int CountRune()
+	{
+		int num = 0;
+		if (socketList != null)
+		{
+			foreach (SocketData socket in socketList)
+			{
+				if (socket.type == SocketData.Type.Rune)
+				{
+					num++;
+				}
+			}
+		}
+		return num;
+	}
+
+	public int MaxRune()
+	{
+		return ((!IsUnique) ? 1 : 0) + Evalue(484);
+	}
+
+	public bool CanAddRune(SourceElement.Row row)
+	{
+		if (category.slot == 0)
+		{
+			return false;
+		}
+		if (material.HasEnc(row.id))
+		{
+			return false;
+		}
+		if (!IsWeapon && row.IsWeaponEnc)
+		{
+			return false;
+		}
+		if (row.category == "resist")
+		{
+			foreach (Element item in elements.ListElements())
+			{
+				if (item.source.category == "resist" && (item.vBase != 0 || item.vSource != 0))
+				{
+					return false;
+				}
+			}
+		}
+		return CountRune() < MaxRune();
+	}
+
+	public bool HasRune()
+	{
+		return CountRune() > 0;
+	}
+
 	public void OnChildNumChange(Card c)
 	{
 		if (ShouldTrySetDirtyInventory() && c.isThing)
@@ -3391,7 +3545,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		ApplyMaterialElements(remove: true);
 		encLV += a;
 		ApplyMaterialElements(remove: false);
-		if (IsEquipmentOrRanged || IsAmmo)
+		if (IsEquipmentOrRangedOrAmmo)
 		{
 			if (IsWeapon || IsAmmo)
 			{
@@ -3420,7 +3574,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		{
 			num = -1;
 		}
-		if (num != 0 && (IsEquipmentOrRanged || IsAmmo))
+		if (num != 0 && IsEquipmentOrRangedOrAmmo)
 		{
 			if (IsWeapon || IsAmmo)
 			{
@@ -3531,6 +3685,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		switch (origin)
 		{
 		case HealSource.Magic:
+		case HealSource.Item:
 			PlaySound("heal");
 			PlayEffect("heal");
 			break;
@@ -3576,7 +3731,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		DamageHP(dmg, 0, 0, attackSource, origin);
 	}
 
-	public void DamageHP(int dmg, int ele, int eleP = 100, AttackSource attackSource = AttackSource.None, Card origin = null, bool showEffect = true)
+	public void DamageHP(int dmg, int ele, int eleP = 100, AttackSource attackSource = AttackSource.None, Card origin = null, bool showEffect = true, Thing weapon = null)
 	{
 		if (hp < 0)
 		{
@@ -3683,7 +3838,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			}
 			if (IsPCParty && EClass.pc.ai is GoalAutoCombat)
 			{
-				dmg = dmg * 100 / Mathf.Min(105 + EClass.pc.Evalue(135) / 10, 110);
+				dmg = dmg * 100 / Mathf.Clamp(105 + EClass.pc.Evalue(135) / 10, 10, 110);
 			}
 			if (HasElement(1218))
 			{
@@ -3819,9 +3974,9 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 				}
 				else
 				{
-					if (attackSource != AttackSource.Finish && IsPCParty && Chara.host == null && EClass.pc.ai is GoalAutoCombat)
+					if (attackSource != AttackSource.Finish && IsPCParty && Chara.host == null)
 					{
-						if (!EClass.player.invlunerable && (EClass.pc.ai as GoalAutoCombat).listHealthy.Contains(Chara))
+						if (EClass.pc.ai is GoalAutoCombat && !EClass.player.invlunerable && (EClass.pc.ai as GoalAutoCombat).listHealthy.Contains(Chara))
 						{
 							EClass.core.actionsNextFrame.Add(delegate
 							{
@@ -3834,7 +3989,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 						if (EClass.player.invlunerable)
 						{
 							EvadeDeath();
-							goto IL_0a84;
+							goto IL_0a8e;
 						}
 					}
 					if (IsPC && Evalue(1220) > 0 && Chara.stamina.value >= Chara.stamina.max / 2)
@@ -3846,8 +4001,8 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 				}
 			}
 		}
-		goto IL_0a84;
-		IL_0a84:
+		goto IL_0a8e;
+		IL_0a8e:
 		if (trait.CanBeAttacked)
 		{
 			renderer.PlayAnime(AnimeID.HitObj);
@@ -3936,6 +4091,8 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			}
 			if (!isDestroyed)
 			{
+				Debug.Log(EClass.player.invlunerable);
+				Debug.Log(EClass.pc.ai?.ToString() + "/" + EClass.pc.ai.IsRunning);
 				Die(e, origin, attackSource);
 				ProcAbsorb();
 				if (EClass.pc.Evalue(1355) > 0 && (IsPCFactionOrMinion || (origin != null && origin.IsPCParty)))
@@ -4272,9 +4429,11 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		{
 			if (origin != null && origin.isChara && isChara)
 			{
-				if (origin.HasElement(662) && attackSource == AttackSource.Melee && origin.isChara && Chara.IsHostile(origin as Chara))
+				int valueOrDefault = (origin.Evalue(662) + weapon?.Evalue(662, ignoreGlobalElement: true)).GetValueOrDefault();
+				int valueOrDefault2 = (origin.Evalue(661) + weapon?.Evalue(661, ignoreGlobalElement: true)).GetValueOrDefault();
+				if (valueOrDefault > 0 && attackSource == AttackSource.Melee && origin.isChara && Chara.IsHostile(origin as Chara))
 				{
-					int num12 = EClass.rnd(3 + Mathf.Clamp(dmg / 100, 0, origin.Evalue(662) / 10));
+					int num12 = EClass.rnd(3 + Mathf.Clamp(dmg / 100, 0, valueOrDefault / 10));
 					origin.Chara.stamina.Mod(num12);
 					if (IsAliveInCurrentZone)
 					{
@@ -4290,9 +4449,9 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 						Chara.mana.Mod(-num13);
 					}
 				}
-				if (origin.HasElement(661) && attackSource == AttackSource.Melee)
+				if (valueOrDefault2 > 0 && attackSource == AttackSource.Melee)
 				{
-					int num14 = EClass.rnd(2 + Mathf.Clamp(dmg / 10, 0, origin.Evalue(661) + 10));
+					int num14 = EClass.rnd(2 + Mathf.Clamp(dmg / 10, 0, valueOrDefault2 + 10));
 					origin.Chara.mana.Mod(num14);
 					if (IsAliveInCurrentZone)
 					{
@@ -4447,7 +4606,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		}
 		bool flag2 = Chara.race.corpse[1].ToInt() > EClass.rnd(1500) || (Chara.IsPowerful && !IsPCFaction) || EClass.debug.godFood;
 		int num = 1;
-		if (Chara.race.IsAnimal && EClass.rnd(EClass._zone.IsPCFaction ? 3 : 5) == 0)
+		if (!IsMinion && Chara.race.IsAnimal && EClass.rnd(EClass._zone.IsPCFaction ? 3 : 5) == 0)
 		{
 			flag2 = true;
 		}
@@ -4456,7 +4615,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			flag2 = true;
 			num = EClass.rndHalf(4 + 10 * (50 + Mathf.Max(0, (int)MathF.Sqrt(EClass.pc.Evalue(290) * 10))) / 100);
 		}
-		else if (origin != null && origin.HasElement(290))
+		else if (origin != null && origin.HasElement(290) && !IsMinion)
 		{
 			if (!flag2 && Chara.race.corpse[1].ToInt() > EClass.rnd(150000 / (100 + (int)Mathf.Sqrt(origin.Evalue(290)) * 5)))
 			{
@@ -4653,7 +4812,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			item4.isHidden = false;
 			item4.SetInt(116);
 			EClass._zone.AddCard(item4, nearestPoint);
-			if (!item4.IsEquipmentOrRanged || item4.rarity < Rarity.Superior || item4.IsCursed)
+			if (!item4.IsEquipment || item4.rarity < Rarity.Superior || item4.IsCursed)
 			{
 				continue;
 			}
@@ -4675,7 +4834,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			}
 			if (IsMinion)
 			{
-				i *= 2;
+				i *= 5;
 			}
 			if (EClass.rnd(i) == 0)
 			{
@@ -5048,6 +5207,11 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		return HasElement(EClass.sources.elements.alias[id].id, req);
 	}
 
+	public bool HasGlobalElement(int ele)
+	{
+		return elements.GetElement(ele)?.IsGlobalElement ?? false;
+	}
+
 	public virtual CardRenderer _CreateRenderer()
 	{
 		renderer = new CardRenderer();
@@ -5083,7 +5247,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 
 	public void DyeRandom()
 	{
-		Dye(EClass.sources.materials.rows.RandomItem().alias);
+		Dye(EClass.sources.materials.rows.Where((SourceMaterial.Row r) => r.matColor.r != r.matColor.g || r.matColor.g != r.matColor.b || r.matColor.b != r.matColor.r).RandomItem().alias);
 	}
 
 	public void Dye(string idMat)
@@ -5573,7 +5737,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			{
 				power = EClass.scene.profile.global.playerLightPowerLimit;
 			}
-			power *= EClass.scene.profile.light.playerLightMod;
+			power *= EClass.scene.profile.light.playerLightMod + (float)EClass.player.customLightMod * EClass.scene.profile.light.playerLightCustomMod;
 			EClass.player.lightRadius = radius;
 			EClass.player.lightPower = power;
 		}
@@ -6220,7 +6384,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			num *= 0.5f;
 		}
 		float num2;
-		if (IsEquipmentOrRanged || trait is TraitMod)
+		if (IsEquipmentOrRangedOrAmmo || trait is TraitMod)
 		{
 			if (sell)
 			{
@@ -6261,7 +6425,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		{
 			num *= 0.1f;
 		}
-		if (encLV != 0)
+		if (encLV != 0 && !category.tag.Contains("noEnc"))
 		{
 			num = (category.tag.Contains("enc") ? (num * (0.7f + (float)(encLV - 1) * 0.2f)) : ((!IsFood) ? (num * (1f + (float)encLV * 0.01f)) : ((!(id == "honey")) ? (num * Mathf.Min(1f + 0.1f * (float)encLV, 2f) + (float)(encLV * 100)) : (num + (float)(encLV * 10)))));
 		}
@@ -6384,12 +6548,13 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		int num = ((priceType != PriceType.CopyShop) ? 1 : 5);
 		float num2 = Mathf.Min(0.01f * (float)Evalue(752), 1f);
 		float num3 = Mathf.Min(0.01f * (float)Evalue(751), 1f);
+		float num4 = Mathf.Min(0.02f * (float)Evalue(759), 2f);
 		if (num3 > 0f)
 		{
 			num3 *= (float)num;
 		}
-		float num4 = Mathf.Clamp(1f + num2 + num3, 0.5f, 5f);
-		p *= num4;
+		float num5 = Mathf.Clamp(1f + num2 + num3, 0.5f, 5f) + num4;
+		p *= num5;
 		p *= 0.20000000298023224;
 		if (sell)
 		{
@@ -6472,11 +6637,11 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			}
 			break;
 		}
-		float num5 = Math.Clamp(Mathf.Sqrt(c.EvalueMax(291) + ((!sell && EClass._zone.IsPCFaction) ? (EClass.Branch.Evalue(2800) * 2) : 0)), 0f, 25f);
+		float num6 = Math.Clamp(Mathf.Sqrt(c.EvalueMax(291) + ((!sell && EClass._zone.IsPCFaction) ? (EClass.Branch.Evalue(2800) * 2) : 0)), 0f, 25f);
 		switch (priceType)
 		{
 		case PriceType.Tourism:
-			num5 = 0f;
+			num6 = 0f;
 			break;
 		case PriceType.Shipping:
 			if (sell)
@@ -6490,52 +6655,52 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			{
 				break;
 			}
-			float num6 = 1.25f;
+			float num7 = 1.25f;
 			if (EClass.Branch != null)
 			{
 				if (EClass.Branch.policies.IsActive(2817))
 				{
-					num6 += 0.1f + 0.01f * Mathf.Sqrt(EClass.Branch.Evalue(2817));
+					num7 += 0.1f + 0.01f * Mathf.Sqrt(EClass.Branch.Evalue(2817));
 				}
 				if (EClass.Branch.policies.IsActive(2816))
 				{
-					num6 += 0.2f + 0.02f * Mathf.Sqrt(EClass.Branch.Evalue(2816));
+					num7 += 0.2f + 0.02f * Mathf.Sqrt(EClass.Branch.Evalue(2816));
 				}
 				if (isChara)
 				{
 					if (EClass.Branch.policies.IsActive(2828))
 					{
-						num6 += 0.1f + 0.01f * Mathf.Sqrt(EClass.Branch.Evalue(2828));
+						num7 += 0.1f + 0.01f * Mathf.Sqrt(EClass.Branch.Evalue(2828));
 					}
 				}
 				else if (category.IsChildOf("food") || category.IsChildOf("drink"))
 				{
 					if (EClass.Branch.policies.IsActive(2818))
 					{
-						num6 += 0.05f + 0.005f * Mathf.Sqrt(EClass.Branch.Evalue(2818));
+						num7 += 0.05f + 0.005f * Mathf.Sqrt(EClass.Branch.Evalue(2818));
 					}
 				}
 				else if (category.IsChildOf("furniture"))
 				{
 					if (EClass.Branch.policies.IsActive(2819))
 					{
-						num6 += 0.05f + 0.005f * Mathf.Sqrt(EClass.Branch.Evalue(2819));
+						num7 += 0.05f + 0.005f * Mathf.Sqrt(EClass.Branch.Evalue(2819));
 					}
 				}
 				else if (EClass.Branch.policies.IsActive(2820))
 				{
-					num6 += 0.05f + 0.005f * Mathf.Sqrt(EClass.Branch.Evalue(2820));
+					num7 += 0.05f + 0.005f * Mathf.Sqrt(EClass.Branch.Evalue(2820));
 				}
 			}
-			p *= num6;
+			p *= num7;
 			break;
 		}
 		}
 		if ((uint)currency > 1u)
 		{
-			num5 = 0f;
+			num6 = 0f;
 		}
-		p *= (sell ? (1f + num5 * 0.02f) : (1f - num5 * 0.02f));
+		p *= (sell ? (1f + num6 * 0.02f) : (1f - num6 * 0.02f));
 		if (sell)
 		{
 			p = EClass.curve((int)p, 10000, 10000, 80);

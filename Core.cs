@@ -22,6 +22,8 @@ public class Core : BaseCore
 
 	public static float gameDeltaNoPause;
 
+	public static float fixedFrame;
+
 	public static bool spiked;
 
 	private static SourceElement sourceElement;
@@ -289,6 +291,11 @@ public class Core : BaseCore
 		}
 	}
 
+	private void FixedUpdate()
+	{
+		fixedFrame += 1f;
+	}
+
 	public void Update()
 	{
 		frame++;
@@ -399,6 +406,8 @@ public class Core : BaseCore
 
 	public void OnApplicationFocus(bool focus)
 	{
+		Resources.UnloadUnusedAssets();
+		GC.Collect();
 		if (config == null)
 		{
 			return;

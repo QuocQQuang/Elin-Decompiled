@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 public class TraitMoongateEx : TraitMoongate
 {
@@ -21,26 +19,30 @@ public class TraitMoongateEx : TraitMoongate
 
 	public void _OnUse()
 	{
-		List<MapMetaData> list = new List<MapMetaData>();
-		foreach (FileInfo item in new DirectoryInfo(CorePath.ZoneSaveUser).GetFiles().Concat(MOD.listMaps))
-		{
-			if (!(item.Extension != ".z"))
-			{
-				MapMetaData metaData = Map.GetMetaData(item.FullName);
-				if (metaData != null && metaData.IsValidVersion())
-				{
-					metaData.path = item.FullName;
-					metaData.date = item.LastWriteTime;
-					list.Add(metaData);
-				}
-			}
-		}
+		List<MapMetaData> list = ListSavedUserMap();
 		if (list.Count == 0)
 		{
 			EClass.pc.SayNothingHappans();
 			return;
 		}
-		list.Sort((MapMetaData a, MapMetaData b) => DateTime.Compare(a.date, b.date));
+		foreach (MapMetaData item in list)
+		{
+			bool flag = false;
+			foreach (string item2 in EClass.player.favMoongate)
+			{
+				_ = item2;
+				if (EClass.player.favMoongate.Contains(item.id))
+				{
+					flag = true;
+					break;
+				}
+			}
+			if (!flag)
+			{
+				EClass.player.favMoongate.Remove(item.id);
+			}
+		}
+		Sort();
 		LayerList layer = null;
 		bool skipDialog = false;
 		layer = EClass.ui.AddLayer<LayerList>().SetList2(list, (MapMetaData a) => a.name, delegate(MapMetaData a, ItemGeneral b)
@@ -71,14 +73,38 @@ public class TraitMoongateEx : TraitMoongate
 					});
 				}
 			});
+			UIButton uIButton = b.AddSubButton(EClass.core.refs.icons.fav, delegate
+			{
+				SE.ClickGeneral();
+				EClass.player.ToggleFavMoongate(a.id);
+				Sort();
+				EClass.ui.FreezeScreen(0.1f);
+				layer.list.List();
+			});
+			uIButton.icon.SetAlpha(EClass.player.favMoongate.Contains(a.id) ? 1f : 0.3f);
+			uIButton.icon.SetNativeSize();
 			void func()
 			{
 				IO.DeleteFile(a.path);
 				list.Remove(a);
+				EClass.ui.FreezeScreen(0.1f);
 				layer.list.List();
 				SE.Trash();
 			}
 		}).SetSize(500f)
 			.SetTitles("wMoongate") as LayerList;
+		static DateTime GetDate(MapMetaData meta)
+		{
+			int num = EClass.player.favMoongate.IndexOf(meta.id);
+			if (num == -1)
+			{
+				return meta.date;
+			}
+			return meta.date + new TimeSpan(-3650 - num, 0, 0, 0, 0);
+		}
+		void Sort()
+		{
+			list.Sort((MapMetaData a, MapMetaData b) => DateTime.Compare(GetDate(a), GetDate(b)));
+		}
 	}
 }

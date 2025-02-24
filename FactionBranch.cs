@@ -1199,6 +1199,17 @@ public class FactionBranch : EClass
 
 	public void OnUnclaimZone()
 	{
+		List<Element> list = owner.ListLandFeats();
+		elements.SetBase(list[1].id, 0);
+		elements.SetBase(list[2].id, 0);
+		if (lv < 5)
+		{
+			return;
+		}
+		foreach (Element item in list.Where((Element a) => a.HasTag("network")).ToList())
+		{
+			EClass.pc.faction.elements.ModBase(item.id, -item.Value);
+		}
 	}
 
 	public void ValidateUpgradePolicies()
@@ -1495,6 +1506,7 @@ public class FactionBranch : EClass
 	{
 		RemoveRecruit(c);
 		AddMemeber(c);
+		c.isRestrained = false;
 		if (c.currentZone != EClass._zone && !c.isDead)
 		{
 			Point point = EClass._map.Installed.traits.GetTraitSet<TraitSpotExit>().GetRandom()?.GetPoint() ?? EClass.pc.pos;
@@ -1613,7 +1625,7 @@ public class FactionBranch : EClass
 		for (int j = 0; j < num2; j++)
 		{
 			Chara chara = CharaGen.CreateFromFilter("c_neutral", ContentLV + Mathf.Min(EClass.player.stats.days, 10));
-			if (chara.isBackerContent)
+			if (chara.isBackerContent || chara.source.quality != 0)
 			{
 				j--;
 			}

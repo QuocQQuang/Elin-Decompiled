@@ -267,7 +267,7 @@ public class AttackProcess : EClass
 			dMulti = dMulti * 1.5f + 0.1f * Mathf.Sqrt(Mathf.Max(0, CC.Evalue(130)));
 		}
 		dMulti = dMulti * (float)distMod / 100f;
-		toHit = toHitBase + toHitFix;
+		toHit = (toHitBase + toHitFix) * (100 + CC.Evalue(414)) / 100;
 		toHit = toHit * distMod / 100;
 		if (CC.HasCondition<ConBane>())
 		{
@@ -342,6 +342,16 @@ public class AttackProcess : EClass
 		Thing _weapon = weapon;
 		bool ignoreSound = ignoreAttackSound;
 		Zone _zone = CC.currentZone;
+		Color effColor = Color.white;
+		if (isCane)
+		{
+			IEnumerable<Element> enumerable = toolRange.owner.elements.dict.Values.Where((Element e) => e.source.categorySub == "eleAttack");
+			if (enumerable.Count() > 0)
+			{
+				Element element = enumerable.RandomItem();
+				effColor = EClass.Colors.elementColors[element.source.alias];
+			}
+		}
 		for (int i = 0; i < numFire; i++)
 		{
 			TweenUtil.Delay((float)i * data.delay, delegate
@@ -357,12 +367,7 @@ public class AttackProcess : EClass
 						Effect effect = Effect.Get("ranged_arrow")._Play(_CC.pos, _CC.isSynced ? _CC.renderer.position : _CC.pos.Position(), 0f, _TP, data.sprite);
 						if (isCane)
 						{
-							IEnumerable<Element> enumerable = toolRange.owner.elements.dict.Values.Where((Element e) => e.source.categorySub == "eleAttack");
-							if (enumerable.Count() > 0)
-							{
-								Element element = enumerable.RandomItem();
-								effect.sr.color = EClass.Colors.elementColors[element.source.alias];
-							}
+							effect.sr.color = effColor;
 						}
 					}
 					if (data.eject)
@@ -451,11 +456,8 @@ public class AttackProcess : EClass
 			{
 				list2 = list2.Concat(ammo.elements.dict.Values).ToList();
 			}
-			if (IsRanged || isThrow)
-			{
-				num2 += weapon.Evalue(91);
-			}
-			num3 += weapon.Evalue(603);
+			num2 += weapon.Evalue(91, ignoreGlobalElement: true);
+			num3 += weapon.Evalue(603, ignoreGlobalElement: true);
 		}
 		else if (CC.id == "rabbit_vopal")
 		{
@@ -465,19 +467,16 @@ public class AttackProcess : EClass
 		if (TC?.Chara != null)
 		{
 			SourceRace.Row race = TC.Chara.race;
-			bane = CC.Evalue(468);
-			if (IsRanged)
-			{
-				bane += toolRange.owner.Evalue(468);
-			}
-			AddBane(race.IsUndead, 461);
-			AddBane(race.IsAnimal, 463);
-			AddBane(race.IsHuman, 464);
-			AddBane(race.IsDragon, 460);
-			AddBane(race.IsGod, 466);
-			AddBane(race.IsMachine, 465);
-			AddBane(race.IsFish, 467);
-			AddBane(race.IsFairy, 462);
+			bane = 0;
+			AddBane(valid: true, 468, 50);
+			AddBane(race.IsUndead, 461, 100);
+			AddBane(race.IsAnimal, 463, 100);
+			AddBane(race.IsHuman, 464, 100);
+			AddBane(race.IsDragon, 460, 100);
+			AddBane(race.IsGod, 466, 100);
+			AddBane(race.IsMachine, 465, 100);
+			AddBane(race.IsFish, 467, 100);
+			AddBane(race.IsFairy, 462, 100);
 			if (bane != 0)
 			{
 				num = num * (100 + bane * 3) / 100;
@@ -574,7 +573,7 @@ public class AttackProcess : EClass
 				conWeapon = CC.GetCondition<ConWeapon>();
 				num4 = conWeapon.sourceElement.id;
 				num5 = conWeapon.power / 2;
-				num6 = 40 + (int)Mathf.Min(MathF.Sqrt(conWeapon.power), 80f);
+				num6 = (int)Mathf.Min(40f + MathF.Sqrt(conWeapon.power), 80f);
 			}
 			if (conWeapon == null && weapon == null && (CC.MainElement != Element.Void || CC.HasElement(1565)))
 			{
@@ -610,7 +609,7 @@ public class AttackProcess : EClass
 		int num9 = num * penetration / 100;
 		num -= num9;
 		num = TC.ApplyProtection(num) + num9 + num8;
-		TC.DamageHP(num, num4, num5, (!IsRanged && !isThrow) ? AttackSource.Melee : AttackSource.Range, CC, showEffect);
+		TC.DamageHP(num, num4, num5, (!IsRanged && !isThrow) ? AttackSource.Melee : AttackSource.Range, CC, showEffect, weapon);
 		conWeapon?.Mod(-1);
 		bool flag2 = IsCane || (weapon != null && weapon.Evalue(482) > 0);
 		int attackStyleElement = CC.body.GetAttackStyleElement(attackStyle);
@@ -657,7 +656,7 @@ public class AttackProcess : EClass
 					{
 						num10 = 0;
 					}
-					if (num10 >= EClass.rnd(100))
+					if (num10 > EClass.rnd(100))
 					{
 						TC.DamageHP(dmg, item.id, isThrow ? (100 + item.Value * 5) : (30 + item.Value), AttackSource.WeaponEnchant, CC);
 					}
@@ -700,15 +699,11 @@ public class AttackProcess : EClass
 			TC.PlaySound("push", 1.5f);
 		}
 		return true;
-		void AddBane(bool valid, int idEle)
+		void AddBane(bool valid, int idEle, int mod)
 		{
 			if (valid)
 			{
-				if (IsRanged)
-				{
-					bane += toolRange.owner.Evalue(idEle);
-				}
-				bane += CC.Evalue(idEle);
+				bane += (CC.Evalue(idEle) + ((weapon != null) ? weapon.Evalue(idEle, ignoreGlobalElement: true) : 0)) * mod / 100;
 			}
 		}
 		bool IgnoreExp()
@@ -802,7 +797,7 @@ public class AttackProcess : EClass
 				{
 					int num12 = 10 + item2.Value / 5;
 					int power = EClass.curve((100 + item2.Value * 10) * (100 + weaponSkill.Value) / 100, 400, 100);
-					if (num12 >= EClass.rnd(100))
+					if (num12 > EClass.rnd(100))
 					{
 						Act obj = item2 as Act;
 						Card card = (obj.TargetType.CanSelectSelf ? CC : TC);
@@ -930,7 +925,7 @@ public class AttackProcess : EClass
 		{
 			return Crit();
 		}
-		if ((float)CC.Evalue(90) + Mathf.Sqrt(CC.Evalue(134)) > (float)EClass.rnd(200))
+		if ((float)(CC.Evalue(90) + ((weapon != null) ? weapon.Evalue(90, ignoreGlobalElement: true) : 0)) + Mathf.Sqrt(CC.Evalue(134)) > (float)EClass.rnd(200))
 		{
 			return Crit();
 		}

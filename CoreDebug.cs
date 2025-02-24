@@ -355,6 +355,8 @@ public class CoreDebug : EScriptable
 			break;
 		}
 		EClass.game.StartNewGame();
+		EClass.game.principal = IO.DeepCopy(EClass.setting.start.principals[0]);
+		EClass.player.validScore = -1;
 		EClass.player.flags.OnEnableDebug();
 		EClass.player.pref.lastIdTabAbility = 3;
 		Zone homeZone = EClass.game.spatials.Find(EClass.game.Prologue.idStartZone);
@@ -905,26 +907,25 @@ public class CoreDebug : EScriptable
 		}
 		if (Input.GetKeyDown(KeyCode.F2))
 		{
-			Chara targetChara = EClass.scene.mouseTarget.TargetChara;
-			if (targetChara != null)
+			for (int i = 0; i < 20; i++)
 			{
-				EClass.pc.Pick(targetChara.MakeMilk());
-				EClass.pc.Pick(targetChara.MakeGene());
-				EClass.pc.Pick(targetChara.MakeBraineCell());
-				EClass.pc.Pick(targetChara.MakeEgg(effect: true, 10));
+				Debug.Log(Rand.Range(0, 2));
 			}
+			EClass.player.recipes.Add("b32");
+			if (EScriptable.rnd(2) == 0)
 			{
-				foreach (Chara chara in EClass._map.charas)
-				{
-					chara.hunger.value = 100;
-				}
-				return;
+				EClass.player.recipes.Add("b118");
 			}
+			else
+			{
+				EClass.player.recipes.Add("b118-p");
+			}
+			return;
 		}
 		if (Input.GetKeyDown(KeyCode.F3))
 		{
 			EClass.pc.AddCondition<ConDisease>();
-			for (int i = 0; i < 10; i++)
+			for (int j = 0; j < 10; j++)
 			{
 				Thing thing = ThingGen.Create("egg_fertilized");
 				thing.TryMakeRandomItem(40);
@@ -946,9 +947,9 @@ public class CoreDebug : EScriptable
 			{
 				EClass.Branch.ModExp(EClass.Branch.GetNextExp());
 			}
-			foreach (Chara chara2 in EClass._map.charas)
+			foreach (Chara chara in EClass._map.charas)
 			{
-				chara2.AddExp(chara2.ExpToNext);
+				chara.AddExp(chara.ExpToNext);
 			}
 			EClass.pc.PlayEffect("boost");
 			EClass.pc.PlaySound("boost");
@@ -1026,7 +1027,7 @@ public class CoreDebug : EScriptable
 			if (Input.GetKey(KeyCode.F9))
 			{
 				EClass.scene.paused = false;
-				for (int j = 0; j < advanceMin; j++)
+				for (int k = 0; k < advanceMin; k++)
 				{
 					EClass.game.updater.FixedUpdate();
 				}

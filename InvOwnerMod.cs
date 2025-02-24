@@ -1,17 +1,10 @@
 public class InvOwnerMod : InvOwnerDraglet
 {
+	public override bool CanTargetAlly => true;
+
 	public override ProcessType processType => ProcessType.None;
 
 	public override string langTransfer => "invMod";
-
-	public static bool IsValidRuneMod(Thing t, SourceElement.Row row, string idMat)
-	{
-		if (idMat == "adamantite")
-		{
-			return t.category.slot == 35;
-		}
-		return false;
-	}
 
 	public static bool IsValidRangedMod(Thing t, SourceElement.Row row)
 	{
@@ -37,12 +30,13 @@ public class InvOwnerMod : InvOwnerDraglet
 		TraitMod traitMod = owner.trait as TraitMod;
 		if (traitMod is TraitRune)
 		{
-			if (!IsValidRuneMod(t, traitMod.source, owner.material.alias))
+			if (!t.CanAddRune(traitMod.source))
 			{
 				return false;
 			}
+			return true;
 		}
-		else if (!IsValidRangedMod(t, traitMod.source))
+		if (!IsValidRangedMod(t, traitMod.source))
 		{
 			return false;
 		}
@@ -61,9 +55,19 @@ public class InvOwnerMod : InvOwnerDraglet
 
 	public override void _OnProcess(Thing t)
 	{
-		SE.Play("reloaded");
-		EClass.pc.PlayEffect("identify");
 		Msg.Say("modded", t, owner);
-		t.ApplySocket(owner.Thing);
+		if (owner.trait is TraitRune)
+		{
+			SE.Play("intonation");
+			EClass.pc.PlayEffect("intonation");
+			t.AddRune(owner);
+			owner.ModNum(-1);
+		}
+		else
+		{
+			SE.Play("reloaded");
+			EClass.pc.PlayEffect("identify");
+			t.ApplySocket(owner.Thing);
+		}
 	}
 }

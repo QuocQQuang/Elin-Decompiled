@@ -133,31 +133,56 @@ public class SourceElement : SourceDataInt<SourceElement.Row>
 		[NonSerialized]
 		public bool isSpell;
 
+		[NonSerialized]
+		public bool isTrait;
+
 		public int idMold;
 
+		[NonSerialized]
 		public string name_L;
 
+		[NonSerialized]
 		public string altname_L;
 
+		[NonSerialized]
 		public string detail_L;
 
+		[NonSerialized]
 		public string textPhase_L;
 
+		[NonSerialized]
 		public string textExtra_L;
 
+		[NonSerialized]
 		public string textInc_L;
 
+		[NonSerialized]
 		public string textDec_L;
 
+		[NonSerialized]
 		public string levelBonus_L;
 
+		[NonSerialized]
 		public string[] textAlt_L;
 
+		[NonSerialized]
 		public string[] adjective_L;
 
 		public override bool UseAlias => true;
 
 		public override string GetAlias => alias;
+
+		public bool IsWeaponEnc
+		{
+			get
+			{
+				if (!tag.Contains("weaponEnc") && !(categorySub == "eleConvert") && !(categorySub == "eleAttack"))
+				{
+					return category == "ability";
+				}
+				return true;
+			}
+		}
 
 		public override string GetName()
 		{
@@ -191,40 +216,27 @@ public class SourceElement : SourceDataInt<SourceElement.Row>
 			return GetText("altname").Split(',').TryGet(i);
 		}
 
-		public bool IsEncAppliable(Thing t, bool isMaterial)
-		{
-			if (isMaterial && t.IsEquipmentOrRanged)
-			{
-				return true;
-			}
-			if (tag.Contains("trait"))
-			{
-				return !t.IsEquipmentOrRanged;
-			}
-			return IsEncAppliable(t.category);
-		}
-
-		public bool IsEncAppliable(Thing t)
+		public bool IsMaterialEncAppliable(Thing t)
 		{
 			if (id == 10)
 			{
 				return true;
 			}
-			if (tag.Contains("trait"))
+			if (isTrait)
 			{
-				if (t.IsEquipmentOrRanged || t.IsAmmo)
+				if (t.IsEquipmentOrRangedOrAmmo)
 				{
 					return false;
 				}
 				return true;
 			}
-			if (!t.IsEquipmentOrRanged)
+			if (!t.IsEquipmentOrRangedOrAmmo && !t.IsThrownWeapon)
 			{
 				return false;
 			}
-			if (t.IsAmmo)
+			if (!t.IsEquipment)
 			{
-				IsEncAppliable(t.category);
+				return IsWeaponEnc;
 			}
 			return true;
 		}
@@ -242,7 +254,7 @@ public class SourceElement : SourceDataInt<SourceElement.Row>
 			int slot = cat.slot;
 			if (slot == 0)
 			{
-				return false;
+				return IsWeaponEnc;
 			}
 			string text = encSlot;
 			if (!(text == "all"))
@@ -342,6 +354,7 @@ public class SourceElement : SourceDataInt<SourceElement.Row>
 			row.isPrimaryAttribute = row.isAttribute && row.tag.Contains("primary");
 			row.isSkill = row.category == "skill";
 			row.isSpell = row.categorySub == "spell";
+			row.isTrait = row.tag.Contains("trait");
 		}
 	}
 

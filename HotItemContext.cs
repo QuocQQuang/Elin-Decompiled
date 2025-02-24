@@ -127,6 +127,10 @@ public class HotItemContext : HotItem
 				{
 					EClass.ui.AddLayer<LayerConfig>();
 				});
+				m.AddButton("worldSetting", delegate
+				{
+					EClass.ui.AddLayer<LayerWorldSetting>();
+				});
 				m.AddSeparator();
 				m.AddButton("LayerHoard", delegate
 				{

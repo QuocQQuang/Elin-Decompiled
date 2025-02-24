@@ -31,7 +31,7 @@ public class HotItemHeld : HotItemThing
 		{
 			return false;
 		}
-		if (!(EClass._zone is Zone_Tent) && !EClass._zone.IsPCFaction && EClass.pc.held.trait.CanBeOnlyBuiltInHome)
+		if (!(EClass._zone is Zone_Tent) && !EClass._zone.IsPCFactionOrTent && EClass.pc.held.trait.CanBeOnlyBuiltInHome)
 		{
 			return false;
 		}
@@ -39,13 +39,13 @@ public class HotItemHeld : HotItemThing
 		{
 			return false;
 		}
-		if (EClass.pc.held.trait is TraitTile)
-		{
-			return true;
-		}
 		if (taskBuild == null)
 		{
 			return false;
+		}
+		if (EClass.pc.held.trait is TraitTile)
+		{
+			return true;
 		}
 		if (!taskBuild.CanPerform())
 		{

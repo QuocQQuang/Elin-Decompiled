@@ -69,7 +69,7 @@ public class TraitDrink : Trait
 		case EffectId.Acidproof:
 			if (!t.isAcidproof)
 			{
-				return t.IsEquipmentOrRanged;
+				return t.IsEquipmentOrRangedOrAmmo;
 			}
 			return false;
 		case EffectId.DrinkWater:
@@ -152,7 +152,8 @@ public class TraitDrink : Trait
 		ActEffect.Proc(IdEffect, Power, owner.blessedState, c, null, new ActRef
 		{
 			n1 = N1,
-			isPerfume = (this is TraitPerfume)
+			isPerfume = (this is TraitPerfume),
+			refThing = owner.Thing
 		});
 	}
 

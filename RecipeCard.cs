@@ -199,7 +199,7 @@ public class RecipeCard : Recipe
 				break;
 			}
 		}
-		bool num5 = EClass.sources.cards.map[key].tag.Contains("static_craft");
+		bool flag3 = EClass.sources.cards.map[key].tag.Contains("static_craft");
 		if (!isDish && num4 < 1)
 		{
 			num4 = 1;
@@ -212,7 +212,7 @@ public class RecipeCard : Recipe
 		{
 			num = -1;
 		}
-		if (num5)
+		if (flag3)
 		{
 			num3 = 0;
 			flag = false;
@@ -222,15 +222,29 @@ public class RecipeCard : Recipe
 			qualityBonus = num3,
 			rarity = (flag ? Rarity.Crude : Rarity.Normal)
 		});
-		Thing thing = (num5 ? ThingGen.Create(key) : ThingGen.Create(key, num, num4));
+		Thing thing = (flag3 ? ThingGen.Create(key) : ThingGen.Create(key, num, num4));
 		if (thing.trait.CraftNum > 1)
 		{
 			thing.SetNum(thing.trait.CraftNum);
 		}
 		thing.idSkin = idSkin;
+		if (thing.IsEquipment && ings != null)
+		{
+			foreach (Thing ing2 in ings)
+			{
+				if (ing2.trait is TraitRune)
+				{
+					thing.AddRune(ing2);
+					if (!thing.HasElement(484))
+					{
+						thing.elements.SetBase(484, 1);
+					}
+				}
+			}
+		}
 		thing.Identify(show: false);
 		thing.isCrafted = true;
-		if (!num5)
+		if (!flag3)
 		{
 			if (base.source.colorIng != 0)
 			{
@@ -243,7 +257,7 @@ public class RecipeCard : Recipe
 			}
 		}
 		thing.SetBlessedState(blessed);
-		if (!num5)
+		if (!flag3)
 		{
 			if (isDish)
 			{
@@ -380,22 +394,30 @@ public class RecipeCard : Recipe
 			}
 			card = task.resources[0];
 		}
+		else if (sourceCard.isChara)
+		{
+			card = CharaGen.Create(idCard, Mathf.Max(EClass._zone.DangerLv, EClass.pc.LV));
+		}
 		else
 		{
-			card = ((!sourceCard.isChara) ? ((Card)ThingGen.Create(idCard, -1, Mathf.Max(EClass._zone.DangerLv, EClass.pc.LV))) : ((Card)CharaGen.Create(idCard, Mathf.Max(EClass._zone.DangerLv, EClass.pc.LV))));
-			if (!card.isChara)
+			card = ThingGen.Create(idCard, -1, Mathf.Max(EClass._zone.DangerLv, EClass.pc.LV));
+			if (!card.IsUnique)
 			{
-				if (!card.IsUnique)
+				card.ChangeMaterial(GetMainMaterial());
+			}
+			if (base.source.colorIng != 0)
+			{
+				card.Dye(GetColorMaterial());
+			}
+			if (card.IsContainer)
+			{
+				card.RemoveThings();
+			}
+			foreach (Ingredient ingredient in ingredients)
+			{
+				if (ingredient.thing != null && ingredient.thing.HasElement(759))
 				{
-					card.ChangeMaterial(GetMainMaterial());
-				}
-				if (base.source.colorIng != 0)
-				{
-					card.Dye(GetColorMaterial());
-				}
-				if (card.IsContainer)
-				{
-					card.RemoveThings();
+					card.elements.SetBase(759, ingredient.thing.Evalue(759));
 				}
 			}
 		}
@@ -449,7 +471,7 @@ public class RecipeCard : Recipe
 		{
 			if (_pos.cell.IsBlocked && _pos.HasChara)
 			{
-				foreach (Chara item in _pos.ListCharas())
+				foreach (Chara item in _pos.ListCharas().Copy())
 				{
 					chara.Kick(item, ignoreSelf: false, karmaLoss: false);
 				}

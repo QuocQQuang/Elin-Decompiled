@@ -69,7 +69,7 @@ public class WidgetCodex : Widget
 		{
 			foreach (RecipeSource item2 in RecipeManager.list)
 			{
-				if (!item2.isChara && !item2.noListing && !item2.isBridgePillar && (EMono.player.recipes.knownRecipes.ContainsKey(item2.id) || item2.alwaysKnown))
+				if (!item2.isChara && !item2.noListing && (EMono.player.recipes.knownRecipes.ContainsKey(item2.id) || item2.alwaysKnown))
 				{
 					hashSet.Add(Recipe.Create(item2));
 				}
@@ -87,8 +87,10 @@ public class WidgetCodex : Widget
 	{
 		list.callbacks = new UIList.Callback<Recipe, ButtonGrid>
 		{
-			onClick = delegate
+			onClick = delegate(Recipe a, ButtonGrid b)
 			{
+				SE.ClickGeneral();
+				a.ToggleTrack(a.GetQuestTrack());
 			},
 			onRedraw = delegate(Recipe a, ButtonGrid b, int i)
 			{

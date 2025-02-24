@@ -15,7 +15,8 @@ public class TraitCrafter : Trait
 		Talisman,
 		Scratch,
 		Incubator,
-		Fortune
+		Fortune,
+		RuneMold
 	}
 
 	public enum AnimeType
@@ -270,6 +271,7 @@ public class TraitCrafter : Trait
 		MixType mixType = source.type.ToEnum<MixType>();
 		int num = source.num.Calc();
 		Thing t = null;
+		bool claimed;
 		switch (mixType)
 		{
 		case MixType.Food:
@@ -304,14 +306,66 @@ public class TraitCrafter : Trait
 		case MixType.Sculpture:
 		{
 			t = ThingGen.Create(thing3);
-			List<CardRow> list = EClass.player.codex.ListKills();
-			list.Add(EClass.sources.cards.map["putty"]);
-			list.Add(EClass.sources.cards.map["snail"]);
-			CardRow cardRow = list.RandomItemWeighted((CardRow a) => Mathf.Max(50 - a.LV, Mathf.Clamp(EClass.pc.Evalue(258) / 2, 1, a.LV * 2)));
+			List<CardRow> list2 = EClass.player.codex.ListKills();
+			list2.Add(EClass.sources.cards.map["putty"]);
+			list2.Add(EClass.sources.cards.map["snail"]);
+			CardRow cardRow = list2.RandomItemWeighted((CardRow a) => Mathf.Max(50 - a.LV, Mathf.Clamp(EClass.pc.Evalue(258) / 2, 1, a.LV * 2)));
 			t.c_idRefCard = cardRow.id;
 			t.ChangeMaterial(thing.material);
 			t.SetEncLv(Mathf.Min(EClass.rnd(EClass.rnd(Mathf.Max(5 + EClass.pc.Evalue(258) - cardRow.LV, 1))), 12));
 			t = CraftUtil.MixIngredients(t, ai.ings, CraftUtil.MixType.General, 999, EClass.pc).Thing;
+			break;
+		}
+		case MixType.RuneMold:
+		{
+			Thing eq = ai.ings[0];
+			Thing thing7 = eq.Duplicate(1);
+			thing7.SetEncLv(0);
+			List<Element> list = thing7.elements.ListRune();
+			if (list.Count == 0)
+			{
+				Msg.SayNothingHappen();
+				break;
+			}
+			foreach (Element item in list)
+			{
+				SocketData runeEnc = eq.GetRuneEnc(item.id);
+				if (runeEnc != null)
+				{
+					item.vBase = runeEnc.value;
+					item.vSource = 0;
+				}
+			}
+			if (eq.material.hardness > owner.material.hardness && !EClass.debug.enable)
+			{
+				Msg.Say("rune_tooHard", owner);
+				break;
+			}
+			EClass.ui.AddLayer<LayerList>().SetList2(list, (Element a) => a.Name, delegate(Element a, ItemGeneral b)
+			{
+				owner.ModNum(-1);
+				eq.Destroy();
+				Thing thing8 = ThingGen.Create("rune");
+				thing8.ChangeMaterial(owner.material);
+				thing8.refVal = a.id;
+				thing8.encLV = a.vBase + a.vSource;
+				EClass.pc.Pick(thing8);
+				EClass.pc.PlaySound("intonation");
+				EClass.pc.PlayEffect("intonation");
+			}, delegate(Element a, ItemGeneral b)
+			{
+				b.SetSubText((a.vBase + a.vSource).ToString() ?? "", 200, FontColor.Default, TextAnchor.MiddleRight);
+				b.Build();
+				if (a.HasTag("noRune"))
+				{
+					b.button1.interactable = false;
+					b.button1.mainText.gameObject.AddComponent<CanvasGroup>().alpha = 0.5f;
+				}
+			}).SetSize(500f)
+				.SetOnKill(delegate
+				{
+				})
+				.SetTitles("wRuneMold");
 			break;
 		}
 		case MixType.Talisman:
@@ -331,8 +385,7 @@ public class TraitCrafter : Trait
 			break;
 		}
 		case MixType.Scratch:
-		{
-			bool claimed = false;
+			claimed = false;
 			Prize(20, "medal", "save", cat: false);
 			Prize(10, "plat", "save", cat: false);
 			Prize(10, "furniture", "nice", cat: true);
@@ -340,7 +393,6 @@ public class TraitCrafter : Trait
 			Prize(4, "food", "", cat: false);
 			Prize(1, "casino_coin", "", cat: false);
 			break;
-		}
 		case MixType.Fortune:
 		{
 			EClass.player.seedFortune++;
@@ -409,6 +461,18 @@ public class TraitCrafter : Trait
 			t.SetNum(num);
 		}
 		return t;
+		void Prize(int chance, string s, string col, bool cat)
+		{
+			if (!claimed && EClass.rnd(chance) == 0)
+			{
+				t = (cat ? ThingGen.CreateFromCategory(s, EClass.pc.LV) : ThingGen.Create(s, -1, EClass.pc.LV));
+				claimed = true;
+				if (col != "")
+				{
+					Msg.SetColor(col);
+				}
+			}
+		}
 	}
 
 	public override void TrySetAct(ActPlan p)

@@ -69,6 +69,9 @@ public class Map : MapBounds, IPathfindGrid
 	[JsonProperty]
 	public Dictionary<int, PlantData> plants = new Dictionary<int, PlantData>();
 
+	[JsonProperty]
+	public MapExportSetting exportSetting;
+
 	public BitArray32 bits;
 
 	public Playlist plDay;
@@ -484,11 +487,12 @@ public class Map : MapBounds, IPathfindGrid
 			export.serializedCards.cards.Clear();
 			if (partial == null)
 			{
+				MapExportSetting mapExportSetting = exportSetting ?? new MapExportSetting();
 				foreach (Chara chara2 in charas)
 				{
 					if (export.usermap)
 					{
-						if (!chara2.trait.IsUnique && !chara2.IsPC)
+						if ((!mapExportSetting.clearLocalCharas || chara2.IsPCFactionOrMinion) && !chara2.trait.IsUnique && !chara2.IsPC)
 						{
 							export.serializedCards.Add(chara2);
 						}
@@ -606,12 +610,14 @@ public class Map : MapBounds, IPathfindGrid
 		Validate(ref bytes18, "roofBlocks");
 		Validate(ref bytes19, "roofBlockMats");
 		Validate(ref bytes20, "roofBlockDirs");
+		int count = EClass.sources.floors.rows.Count;
+		int count2 = EClass.sources.materials.rows.Count;
 		int num3 = 0;
 		for (int i = 0; i < num; i++)
 		{
 			for (int j = 0; j < num2; j++)
 			{
-				cells[i, j] = new Cell
+				Cell cell = (cells[i, j] = new Cell
 				{
 					x = (byte)i,
 					z = (byte)j,
@@ -642,8 +648,16 @@ public class Map : MapBounds, IPathfindGrid
 					isWatered = bytes12[num3].GetBit(0),
 					isObjDyed = bytes12[num3].GetBit(1),
 					crossWall = bytes12[num3].GetBit(2)
-				};
-				Critter.RebuildCritter(cells[i, j]);
+				});
+				if (cell._bridge >= count)
+				{
+					cell._bridge = 0;
+				}
+				if (cell._bridgeMat >= count2)
+				{
+					cell._bridgeMat = 1;
+				}
+				Critter.RebuildCritter(cell);
 				num3++;
 			}
 		}
@@ -1251,7 +1265,7 @@ public class Map : MapBounds, IPathfindGrid
 				continue;
 			}
 			Card rootCard3 = item3.GetRootCard();
-			if (item3.IsEquipmentOrRanged && (EClass.rnd(4) != 0 || ((item3.IsRangedWeapon || item3.Thing.isEquipped) && rootCard3.IsPCFaction && EClass.rnd(4) != 0)))
+			if (item3.IsEquipmentOrRangedOrAmmo && (EClass.rnd(4) != 0 || ((item3.IsRangedWeapon || item3.Thing.isEquipped) && rootCard3.IsPCFaction && EClass.rnd(4) != 0)))
 			{
 				continue;
 			}
@@ -1506,7 +1520,7 @@ public class Map : MapBounds, IPathfindGrid
 		SetObj(x, z, (byte)EClass.sources.objs.rows[id].DefaultMaterial.id, id, value, dir);
 	}
 
-	public void SetObj(int x, int z, int idMat, int idObj, int value, int dir)
+	public void SetObj(int x, int z, int idMat, int idObj, int value, int dir, bool ignoreRandomMat = false)
 	{
 		Cell cell = cells[x, z];
 		if (cell.sourceObj.id == 118 || idObj == 118)
@@ -1520,7 +1534,7 @@ public class Map : MapBounds, IPathfindGrid
 		cell.isHarvested = false;
 		cell.isObjDyed = false;
 		SourceObj.Row sourceObj = cell.sourceObj;
-		if (!sourceObj.matCategory.IsEmpty())
+		if (!ignoreRandomMat && !sourceObj.matCategory.IsEmpty())
 		{
 			int num = EClass._zone.DangerLv;
 			if (sourceObj.tag.Contains("spot"))
@@ -1630,7 +1644,7 @@ public class Map : MapBounds, IPathfindGrid
 		}
 	}
 
-	public void MineBlock(Point point, bool recoverBlock = false, Chara c = null)
+	public void MineBlock(Point point, bool recoverBlock = false, Chara c = null, bool mineObj = true)
 	{
 		bool flag = ActionMode.Mine.IsRoofEditMode() && point.cell._roofBlock != 0;
 		if (!point.IsValid || (!flag && !point.cell.HasBlock))
@@ -1658,7 +1672,7 @@ public class Map : MapBounds, IPathfindGrid
 				RemoveLonelyRamps(point.cell);
 			}
 			point.SetBlock();
-			if (flag2 && point.sourceObj.tileType.IsBlockMount)
+			if (flag2 && point.sourceObj.tileType.IsBlockMount && mineObj)
 			{
 				MineObj(point, null, c);
 			}
@@ -1806,7 +1820,6 @@ public class Map : MapBounds, IPathfindGrid
 		}
 		Cell cell = point.cell;
 		SourceObj.Row sourceObj = cell.sourceObj;
-		bool flag = false;
 		if (c == null && task != null)
 		{
 			c = task.owner;
@@ -1848,7 +1861,7 @@ public class Map : MapBounds, IPathfindGrid
 			{
 				if (cell.HasBlock && (sourceObj.id == 18 || sourceObj.id == 19))
 				{
-					MineBlock(point, recoverBlock: false, c);
+					MineBlock(point, recoverBlock: false, c, mineObj: false);
 				}
 				switch (sourceObj.alias)
 				{
@@ -1871,10 +1884,6 @@ public class Map : MapBounds, IPathfindGrid
 		}
 		SetObj(point.x, point.z);
 		cell.gatherCount = 0;
-		if (flag)
-		{
-			RefreshFOV(point.x, point.z);
-		}
 		void Pop(Thing t)
 		{
 			if (EClass.scene.actionMode.IsBuildMode && EClass.debug.godBuild)
@@ -1949,13 +1958,18 @@ public class Map : MapBounds, IPathfindGrid
 			HitResult hitResult = item.TileType._HitTest(point, item.Thing, canIgnore: false);
 			if (item.Thing.stackOrder != detail.things.IndexOf(item.Thing) || (hitResult != HitResult.Valid && hitResult != HitResult.Warning))
 			{
-				if (EClass._zone.IsPCFaction)
+				bool flag = true;
+				if (EClass._zone.IsPCFaction || item.rarity >= Rarity.Legendary || item.trait is TraitFigure)
 				{
-					item.SetPlaceState(PlaceState.roaming);
+					flag = false;
+				}
+				if (flag)
+				{
+					item.Die();
 				}
 				else
 				{
-					item.Die();
+					item.SetPlaceState(PlaceState.roaming);
 				}
 			}
 		}

@@ -217,6 +217,9 @@ public class Game : EClass
 	[JsonProperty]
 	public List<Thing> lostThings = new List<Thing>();
 
+	[JsonProperty]
+	public GamePrincipal principal = new GamePrincipal();
+
 	public int gameSpeedIndex = 1;
 
 	public int lastGameSpeedIndex = 1;
@@ -392,6 +395,10 @@ public class Game : EClass
 			{
 				value.memberType = FactionMemberType.Default;
 			}
+			if (!value.isDyed && value.HasTag(CTAG.random_color))
+			{
+				value.DyeRandom();
+			}
 		}
 		foreach (FactionBranch child in EClass.pc.faction.GetChildren())
 		{
@@ -456,6 +463,20 @@ public class Game : EClass
 				questDebt.stage = 5;
 			}
 		}
+		TryAddQuest("into_darkness", "exile_kettle");
+		if (version.IsBelow(0, 23, 94))
+		{
+			EClass.game.principal = IO.DeepCopy(EClass.setting.start.principals[0]);
+			player.validScore = -1;
+		}
+		if (version.IsBelow(0, 23, 93))
+		{
+			RecipeManager.BuildList();
+			Debug.Log("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■feafefaeffaeaffeaaeaefseasfaefaef");
+			while (TryAddRecipe())
+			{
+			}
+		}
 		if (version.IsBelow(0, 23, 72))
 		{
 			foreach (Chara value2 in EClass.game.cards.globalCharas.Values)
@@ -489,10 +510,6 @@ public class Game : EClass
 		if (version.IsBelow(0, 22, 91))
 		{
 			TryAddQuestIfActive("demitas_spellwriter", "into_darkness");
-		}
-		if (version.IsBelow(0, 22, 91))
-		{
-			TryAddQuest("into_darkness", "exile_kettle");
 		}
 		if (version.IsBelow(0, 22, 86))
 		{
@@ -608,6 +625,30 @@ public class Game : EClass
 			{
 				quests.Add(idQuest);
 			}
+		}
+		bool TryAddRecipe()
+		{
+			foreach (string key in player.recipes.knownRecipes.Keys)
+			{
+				if (key.Length > 1 && key[0] == 'b')
+				{
+					RecipeSource recipeSource = RecipeManager.Get(key + "-p");
+					if (recipeSource != null && !player.recipes.knownRecipes.ContainsKey(recipeSource.id))
+					{
+						Debug.Log(recipeSource.id);
+						player.recipes.Add(recipeSource.id, showEffect: false);
+						return true;
+					}
+					recipeSource = RecipeManager.Get(key.Replace("-p", ""));
+					if (recipeSource != null && !player.recipes.knownRecipes.ContainsKey(recipeSource.id))
+					{
+						Debug.Log(recipeSource.id);
+						player.recipes.Add(recipeSource.id, showEffect: false);
+						return true;
+					}
+				}
+			}
+			return false;
 		}
 		static bool TryDestroy()
 		{

@@ -87,10 +87,13 @@ public class SourceMaterial : SourceDataInt<SourceMaterial.Row>
 
 		public static string[] IDAxe = new string[1] { "wood" };
 
+		[NonSerialized]
 		public string name_L;
 
+		[NonSerialized]
 		public string detail_L;
 
+		[NonSerialized]
 		public string[] altName_L;
 
 		public override bool UseAlias => true;
@@ -117,6 +120,18 @@ public class SourceMaterial : SourceDataInt<SourceMaterial.Row>
 
 		public void SetTiles()
 		{
+		}
+
+		public bool HasEnc(int id)
+		{
+			foreach (int key in elementMap.Keys)
+			{
+				if (key == id)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 
 		public void AddBlood(Point p, int a = 1)

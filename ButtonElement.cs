@@ -195,9 +195,11 @@ public class ButtonElement : UIButton
 			if (element != null)
 			{
 				num = element.Value;
-				if (!element.CanLink(thing.elements) || element.IsGlobalElement)
+				if (element.IsGlobalElement && thing.c_idDeity != EClass.pc.faith.id)
 				{
-					num = 0;
+					uIItem.text1.SetActive(enable: false);
+					uIItem.image1.color = Color.white.SetAlpha(0.5f);
+					continue;
 				}
 			}
 			if (num == 0)
@@ -206,7 +208,19 @@ public class ButtonElement : UIButton
 				uIItem.image1.color = Color.white.SetAlpha(0.5f);
 			}
 			text = (e.IsFlag ? "✓" : (Mathf.Abs(num).ToString() ?? ""));
-			uIItem.text1.SetText(text, (num >= 0) ? FontColor.Good : FontColor.Bad);
+			FontColor c2 = ((num >= 0) ? FontColor.Good : FontColor.Bad);
+			if (element != null)
+			{
+				if (!element.CanLink(thing.elements))
+				{
+					c2 = FontColor.Gray;
+				}
+				if (element.IsGlobalElement)
+				{
+					c2 = FontColor.Myth;
+				}
+			}
+			uIItem.text1.SetText(text, c2);
 		}
 		text = "";
 		int value = e.Value;

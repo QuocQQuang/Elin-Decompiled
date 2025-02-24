@@ -91,7 +91,7 @@ public class GoalCombat : Goal
 					tc = (owner.enemy = null);
 				}
 			}
-			if (tc == null || tc.isDead || !tc.ExistsOnMap || !tc.pos.IsInBounds || lostCount >= (owner.IsPowerful ? 50 : 5))
+			if (tc == null || tc.isDead || !tc.ExistsOnMap || !tc.pos.IsInBounds || lostCount >= (owner.IsPowerful ? 50 : 5) || !owner.CanSee(tc))
 			{
 				tc = (owner.enemy = null);
 				if (owner.IsPC && EClass.game.config.autoCombat.abortOnKill)
@@ -314,6 +314,7 @@ public class GoalCombat : Goal
 			}
 			else if (owner.FindNearestNewEnemy())
 			{
+				yield return Status.Running;
 				continue;
 			}
 			yield return Status.Running;
@@ -483,7 +484,7 @@ public class GoalCombat : Goal
 			{
 				continue;
 			}
-			switch (id)
+			switch (act.id)
 			{
 			case 6602:
 				if (dist <= 1 || tc.HasCondition<ConEntangle>())
@@ -493,6 +494,19 @@ public class GoalCombat : Goal
 				break;
 			case 6450:
 				if (isPCFaction && (tc.HasElement(1221) || tc.HasElement(1223) || tc.id == "hedgehog_ether"))
+				{
+					continue;
+				}
+				break;
+			case 8200:
+			case 8201:
+				if (owner.HasElement(400))
+				{
+					continue;
+				}
+				break;
+			case 6400:
+				if (isPCFaction)
 				{
 					continue;
 				}
@@ -513,9 +527,9 @@ public class GoalCombat : Goal
 				break;
 			case "taunt":
 			{
-				bool flag7 = owner.HasCondition<StanceTaunt>();
-				bool flag8 = tactics.source.taunt != -1 && 100 * owner.hp / owner.MaxHP >= tactics.source.taunt;
-				num = ((flag7 && !flag8) ? 100 : ((!flag7 && flag8) ? 100 : 0));
+				bool flag6 = owner.HasCondition<StanceTaunt>();
+				bool flag7 = tactics.source.taunt != -1 && 100 * owner.hp / owner.MaxHP >= tactics.source.taunt;
+				num = ((flag6 && !flag7) ? 100 : ((!flag6 && flag7) ? 100 : 0));
 				break;
 			}
 			case "melee":
@@ -594,15 +608,19 @@ public class GoalCombat : Goal
 				{
 					continue;
 				}
-				bool flag9 = text == "dot";
-				if (flag9 && (owner.isRestrained || (tc != null && tc.IsRestrainedResident)))
+				bool flag8 = text == "dot";
+				if (flag8 && (owner.isRestrained || (tc != null && tc.IsRestrainedResident)))
 				{
 					continue;
 				}
 				num = ((text == "attackMelee") ? tactics.P_Melee : tactics.P_Spell) + GetAttackMod(act);
-				if (num > 0 && flag9)
+				if (num > 0 && flag8)
 				{
 					num += 10;
+				}
+				if (ability.aiPt)
+				{
+					ability.pt = true;
 				}
 				break;
 			}
@@ -612,13 +630,13 @@ public class GoalCombat : Goal
 				{
 					continue;
 				}
-				bool flag6 = ability.act is ActBolt;
+				bool flag9 = ability.act is ActBolt;
 				if (!flag || (owner.IsPCParty && (EClass._zone.IsTown || EClass._zone.IsPCFaction)) || (act.id == 9150 && EClass._zone.IsPCFaction && owner.IsNeutralOrAbove()))
 				{
 					continue;
 				}
-				GetNumEnemy(flag6 ? 6 : 5);
-				if (numEnemy == 0 || (owner.IsPCFactionOrMinion && GetNumNeutral(flag6 ? 6 : 5) > 0))
+				GetNumEnemy(flag9 ? 6 : 5);
+				if (numEnemy == 0 || (owner.IsPCFactionOrMinion && GetNumNeutral(flag9 ? 6 : 5) > 0))
 				{
 					continue;
 				}
@@ -635,8 +653,8 @@ public class GoalCombat : Goal
 			case "buffStats":
 				num = ForeachChara(ability, delegate(Chara c)
 				{
-					Element buffStats2 = c.GetBuffStats(s.proc[1]);
-					return (buffStats2 == null || buffStats2.Value < 0) ? tactics.P_Buff : 0;
+					Element buffStats = c.GetBuffStats(s.proc[1]);
+					return (buffStats == null || buffStats.Value < 0) ? tactics.P_Buff : 0;
 				}, isFriendlyAbility: true);
 				if (ability.aiPt || (owner.IsPC && tactics.CastPartyBuff))
 				{
@@ -649,6 +667,10 @@ public class GoalCombat : Goal
 					continue;
 				}
 				num = tactics.P_Debuff;
+				if (ability.aiPt)
+				{
+					ability.pt = true;
+				}
 				break;
 			case "debuffStats":
 				if (!flag)
@@ -657,9 +679,13 @@ public class GoalCombat : Goal
 				}
 				num = ForeachChara(ability, delegate(Chara c)
 				{
-					Element buffStats = c.GetBuffStats(s.proc[1]);
-					return (buffStats == null || buffStats.Value > 0) ? tactics.P_Debuff : 0;
+					Element buffStats2 = c.GetBuffStats(s.proc[1]);
+					return (buffStats2 == null || buffStats2.Value > 0) ? tactics.P_Debuff : 0;
 				}, isFriendlyAbility: false);
+				if (ability.aiPt)
+				{
+					ability.pt = true;
+				}
 				break;
 			case "ground":
 				if (!flag || owner.isRestrained || (tc != null && tc.IsRestrainedResident))
@@ -832,7 +858,7 @@ public class GoalCombat : Goal
 				continue;
 			}
 			Cost cost = ability2.act.GetCost(owner);
-			if (owner.IsPCParty && ability2.pt && !ability2.act.TargetType.ForceParty && cost.cost * EClass.pc.party.members.Count > owner.mana.value)
+			if (owner.IsPCParty && ability2.pt && !ability2.act.IsTargetHostileParty() && !ability2.act.TargetType.ForceParty && cost.cost * EClass.pc.party.members.Count > owner.mana.value)
 			{
 				continue;
 			}
