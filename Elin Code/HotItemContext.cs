@@ -137,7 +137,7 @@ public class HotItemContext : HotItem
 					EClass.ui.AddLayer<LayerHoard>();
 				});
 				m.AddSeparator();
-				if (EClass.game.Difficulty.allowManualSave || EClass.debug.enable)
+				if (!EClass.game.principal.disableManualSave || EClass.debug.enable)
 				{
 					m.AddButton("save", delegate
 					{
