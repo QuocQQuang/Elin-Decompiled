@@ -765,7 +765,7 @@ public class Player : EClass
 	public int customLightMod = 3;
 
 	[JsonProperty]
-	public int validScore;
+	public int questRerollCost;
 
 	[JsonProperty]
 	public float angle;
