@@ -4705,6 +4705,10 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			}
 			if (!isBackerContent && !flag)
 			{
+				if (id == "isca")
+				{
+					list.Add(ThingGen.Create("blood_angel"));
+				}
 				int num5 = ((EClass._zone.Boss == this) ? 2 : ((this.rarity >= Rarity.Legendary) ? 1 : 0));
 				if (EClass._zone is Zone_Void)
 				{

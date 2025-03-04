@@ -59,9 +59,9 @@ public class LayerQuestBoard : ELayer
 		{
 			return;
 		}
-		menuRight.AddButton("rerollQuest".lang(1.ToString() ?? ""), delegate
+		menuRight.AddButton("rerollQuest".lang(2.ToString() ?? ""), delegate
 		{
-			if (ELayer._zone.influence < 1)
+			if (ELayer._zone.influence < 2)
 			{
 				SE.Beep();
 				Msg.Say("notEnoughInfluence");
@@ -71,7 +71,7 @@ public class LayerQuestBoard : ELayer
 				SE.Dice();
 				ELayer._zone.UpdateQuests(force: true);
 				RefreshQuest();
-				ELayer._zone.influence--;
+				ELayer._zone.influence -= 2;
 			}
 		});
 	}
