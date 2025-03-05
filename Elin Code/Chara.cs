@@ -5027,7 +5027,7 @@ public class Chara : Card, IPathfindWalker
 				Msg.Say("abort_allyDead");
 			}
 		}
-		else if (EClass.game.config.autoCombat.abortOnEnemyDead && EClass.player.TryAbortAutoCombat())
+		else if (EClass.game.config.autoCombat.abortOnEnemyDead && EClass.player.TryAbortAutoCombat(immediate: false))
 		{
 			Msg.Say("abort_enemyDead");
 		}

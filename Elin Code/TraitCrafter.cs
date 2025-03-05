@@ -161,7 +161,7 @@ public class TraitCrafter : Trait
 			}
 			if (text == "any")
 			{
-				if (this is TraitDyeMaker && !c.category.IsChildOf("resource"))
+				if (this is TraitDyeMaker && !c.category.GetRoot().tag.Contains("dye") && !c.category.tag.Contains("dye"))
 				{
 					return false;
 				}

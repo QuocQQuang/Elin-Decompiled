@@ -82,7 +82,7 @@ public class LayerQuestBoard : ELayer
 		});
 		static int GetCost()
 		{
-			return 1 + ELayer.player.questRerollCost / 3;
+			return 1;
 		}
 	}
 
