@@ -1267,15 +1267,15 @@ public class ActEffect : EClass
 			{
 				break;
 			}
-			int hex2 = 0;
+			int hex = 0;
 			foreach (Condition condition4 in TC.conditions)
 			{
 				if (condition4.Type == ConditionType.Debuff)
 				{
-					hex2++;
+					hex++;
 				}
 			}
-			if (hex2 == 0)
+			if (hex == 0)
 			{
 				CC.SayNothingHappans();
 				break;
@@ -1299,8 +1299,8 @@ public class ActEffect : EClass
 					{
 						break;
 					}
-					int dmg2 = Dice.Create("SpShutterHex", power * hex2, CC, (actRef.refThing != null) ? null : actRef.act).Roll();
-					item3.DamageHP(dmg2, 919, power, AttackSource.None, CC);
+					int dmg = Dice.Create("SpShutterHex", power * hex, CC, (actRef.refThing != null) ? null : actRef.act).Roll();
+					item3.DamageHP(dmg, 919, power, AttackSource.None, CC);
 				}
 			});
 			break;
@@ -1446,26 +1446,26 @@ public class ActEffect : EClass
 			List<Thing> list5 = new List<Thing>();
 			TC.things.Foreach(delegate(Thing t)
 			{
-				int num6 = 0;
+				int num7 = 0;
 				if ((t.isEquipped || t.IsRangedWeapon || blessed) && t.blessedState < BlessedState.Normal)
 				{
 					if (t.blessedState == BlessedState.Cursed)
 					{
-						num6 = EClass.rnd(200);
+						num7 = EClass.rnd(200);
 					}
 					if (t.blessedState == BlessedState.Doomed)
 					{
-						num6 = EClass.rnd(1000);
+						num7 = EClass.rnd(1000);
 					}
 					if (blessed)
 					{
-						num6 /= 2;
+						num7 /= 2;
 					}
 					if (id == EffectId.UncurseEQGreater)
 					{
-						num6 /= 10;
+						num7 /= 10;
 					}
-					if (power >= num6)
+					if (power >= num7)
 					{
 						TC.Say("uncurseEQ_success", t);
 						t.SetBlessedState(BlessedState.Normal);
@@ -1532,14 +1532,14 @@ public class ActEffect : EClass
 		case EffectId.KizuamiTrick:
 		{
 			EClass.game.religions.Trickery.Talk("ability");
-			bool hex = CC.IsHostile(TC);
-			List<SourceStat.Row> list6 = EClass.sources.stats.rows.Where((SourceStat.Row con) => con.tag.Contains("random") && con.group == (hex ? "Debuff" : "Buff")).ToList();
+			bool hex2 = CC.IsHostile(TC);
+			List<SourceStat.Row> list6 = EClass.sources.stats.rows.Where((SourceStat.Row con) => con.tag.Contains("random") && con.group == (hex2 ? "Debuff" : "Buff")).ToList();
 			int power2 = power;
 			for (int l = 0; l < 4 + EClass.rnd(2); l++)
 			{
 				SourceStat.Row row2 = list6.RandomItem();
 				list6.Remove(row2);
-				Proc(hex ? EffectId.Debuff : EffectId.Buff, CC, TC, power2, new ActRef
+				Proc(hex2 ? EffectId.Debuff : EffectId.Buff, CC, TC, power2, new ActRef
 				{
 					n1 = row2.alias
 				});
@@ -1556,13 +1556,13 @@ public class ActEffect : EClass
 			bool isPowerful = TC.IsPowerful;
 			string n = actRef.n1;
 			int a2 = power;
-			int num8 = TC.WIL * (isPowerful ? 20 : 5);
+			int num6 = TC.WIL * (isPowerful ? 20 : 5);
 			ConHolyVeil condition = TC.GetCondition<ConHolyVeil>();
 			if (condition != null)
 			{
-				num8 += condition.power * 5;
+				num6 += condition.power * 5;
 			}
-			if (EClass.rnd(a2) < num8 / EClass.sources.stats.alias[n].hexPower && EClass.rnd(10) != 0)
+			if (EClass.rnd(a2) < num6 / EClass.sources.stats.alias[n].hexPower && EClass.rnd(10) != 0)
 			{
 				TC.Say("debuff_resist", TC);
 				CC.DoHostileAction(TC);
@@ -1734,12 +1734,12 @@ public class ActEffect : EClass
 		{
 			bool flag8 = id == EffectId.DamageBody || id == EffectId.DamageBodyGreat;
 			bool mind = id == EffectId.DamageMind || id == EffectId.DamageMindGreat;
-			int num7 = ((id == EffectId.DamageBody || id == EffectId.DamageMind) ? 1 : (4 + EClass.rnd(4)));
+			int num8 = ((id == EffectId.DamageBody || id == EffectId.DamageMind) ? 1 : (4 + EClass.rnd(4)));
 			if (id == EffectId.Weaken)
 			{
 				flag8 = EClass.rnd(2) == 0;
 				mind = !flag8;
-				num7 = 1;
+				num8 = 1;
 			}
 			else
 			{
@@ -1747,7 +1747,7 @@ public class ActEffect : EClass
 				TC.PlaySound("debuff");
 			}
 			TC.Say(flag8 ? "damageBody" : "damageMind", TC);
-			for (int k = 0; k < num7; k++)
+			for (int k = 0; k < num8; k++)
 			{
 				TC.DamageTempElements(power, flag8, mind);
 			}
@@ -1805,6 +1805,10 @@ public class ActEffect : EClass
 			if (id == EffectId.JureHeal)
 			{
 				EClass.game.religions.Healing.Talk("ability");
+			}
+			if (actRef.act != null)
+			{
+				Debug.Log(actRef.act.id);
 			}
 			int num10 = Dice.Create((actRef.act != null && EClass.sources.calc.map.ContainsKey(actRef.act.ID)) ? actRef.act.ID : "SpHealLight", power, CC, (actRef.refThing != null) ? null : actRef.act).Roll();
 			if (flag)
@@ -1916,8 +1920,8 @@ public class ActEffect : EClass
 			if (TC.HasElement(1211))
 			{
 				TC.Say("drinkSaltWater_snail", TC);
-				int dmg = ((TC.hp > 10) ? (TC.hp - EClass.rnd(10)) : 10000);
-				TC.DamageHP(dmg, AttackSource.None, CC);
+				int dmg2 = ((TC.hp > 10) ? (TC.hp - EClass.rnd(10)) : 10000);
+				TC.DamageHP(dmg2, AttackSource.None, CC);
 			}
 			else if (TC.IsPC)
 			{

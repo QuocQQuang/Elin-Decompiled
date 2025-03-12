@@ -440,6 +440,15 @@ public class Element : EClass
 		return SpriteSheet.Get("Media/Graphics/Icon/Element/icon_elements", "ele_" + source.alias + suffix) ?? SpriteSheet.Get("Media/Graphics/Icon/Element/icon_elements", "ele_" + source.aliasParent + suffix) ?? SpriteSheet.Get("Media/Graphics/Icon/Element/icon_elements", "cat_" + source.category);
 	}
 
+	public bool IsActive(Card c)
+	{
+		if (IsGlobalElement && c != null && !c.c_idDeity.IsEmpty() && c.c_idDeity != EClass.pc.idFaith)
+		{
+			return false;
+		}
+		return Value != 0;
+	}
+
 	public int SortVal(bool charaSheet = false)
 	{
 		int num = ((source.sort != 0) ? source.sort : id);

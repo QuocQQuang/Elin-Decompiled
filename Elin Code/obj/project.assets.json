@@ -451,11 +451,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\QQ\\Desktop\\Elin Decompiled code\\EA 23.95\\Elin.csproj",
+      "projectUniqueName": "C:\\Users\\QQ\\Desktop\\Elin Decompiled code\\EA 23.100\\Elin.csproj",
       "projectName": "Elin",
-      "projectPath": "C:\\Users\\QQ\\Desktop\\Elin Decompiled code\\EA 23.95\\Elin.csproj",
+      "projectPath": "C:\\Users\\QQ\\Desktop\\Elin Decompiled code\\EA 23.100\\Elin.csproj",
       "packagesPath": "C:\\Users\\QQ\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\QQ\\Desktop\\Elin Decompiled code\\EA 23.95\\obj\\",
+      "outputPath": "C:\\Users\\QQ\\Desktop\\Elin Decompiled code\\EA 23.100\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -488,7 +488,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.100"
+      "SdkAnalysisLevel": "9.0.200"
     },
     "frameworks": {
       "net40": {
@@ -501,7 +501,7 @@
             "autoReferenced": true
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200\\RuntimeIdentifierGraph.json"
       }
     }
   }
