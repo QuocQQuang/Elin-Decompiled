@@ -5,9 +5,11 @@ using UnityEngine.UI;
 
 public class ELEMENT
 {
-	public const int antidote = 753;
+	public const int rare = 751;
 
-	public const int comfort = 750;
+	public const int cute = 752;
+
+	public const int antidote = 753;
 
 	public const int nerve = 754;
 
@@ -17,9 +19,7 @@ public class ELEMENT
 
 	public const int purity = 759;
 
-	public const int cute = 752;
-
-	public const int rare = 751;
+	public const int comfort = 750;
 
 	public const int _void = 0;
 
@@ -69,7 +69,7 @@ public class ELEMENT
 
 	public static readonly int[] IDS = new int[31]
 	{
-		753, 750, 754, 755, 756, 759, 752, 751, 0, 2,
+		751, 752, 753, 754, 755, 756, 759, 750, 0, 2,
 		1, 3, 5, 10, 11, 12, 13, 14, 16, 17,
 		18, 15, 21, 22, 23, 24, 25, 26, 29, 85,
 		20
