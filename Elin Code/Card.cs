@@ -6107,7 +6107,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 
 	public string GetTalkText(string idTopic, bool stripPun = false, bool useDefault = true)
 	{
-		bool flag = isChara && Chara.IsHuman;
+		bool flag = isChara && Chara.IsHumanSpeak;
 		string text = MOD.listTalk.GetTalk(c_idTalk.IsEmpty(id), idTopic, useDefault, flag);
 		if (!text.IsEmpty())
 		{
