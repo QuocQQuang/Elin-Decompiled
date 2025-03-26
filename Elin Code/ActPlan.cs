@@ -500,61 +500,71 @@ public class ActPlan : EClass
 			}
 			items.ForeachReverse(delegate(Card _c)
 			{
-				Chara c = _c.Chara;
-				if (c != null && !c.IsPC && EClass.pc.CanSee(c))
+				if (_c.isThing)
 				{
-					int num = c.Dist(EClass.pc);
-					if (num <= 1 || !EClass.pc.isBlind)
+					if (_c.trait.CanBeAttacked)
 					{
-						if (!EClass.pc.isBlind && !c.IsHostile() && (input == ActInput.AllAction || !(c.IsPCParty || c.IsMinion || isKey)) && (input == ActInput.AllAction || !c.IsNeutral() || c.quest != null || EClass.game.quests.IsDeliverTarget(c)) && c.isSynced && num <= 2)
+						TrySetAct(ACT.Melee, _c);
+					}
+				}
+				else
+				{
+					Chara c = _c.Chara;
+					if (c != null && !c.IsPC && EClass.pc.CanSee(c))
+					{
+						int num = c.Dist(EClass.pc);
+						if (num <= 1 || !EClass.pc.isBlind)
 						{
-							bool flag = !c.HasCondition<ConSuspend>() && (!c.isRestrained || !c.IsPCFaction);
-							if (EClass._zone.instance is ZoneInstanceMusic && !c.IsPCFactionOrMinion)
+							if (!EClass.pc.isBlind && !c.IsHostile() && (input == ActInput.AllAction || !(c.IsPCParty || c.IsMinion || isKey)) && (input == ActInput.AllAction || !c.IsNeutral() || c.quest != null || EClass.game.quests.IsDeliverTarget(c)) && c.isSynced && num <= 2)
 							{
-								flag = false;
-							}
-							if (flag || altAction)
-							{
-								if (EClass.pc.HasElement(1216) && c.HasCondition<ConSleep>())
+								bool flag = !c.HasCondition<ConSuspend>() && (!c.isRestrained || !c.IsPCFaction);
+								if (EClass._zone.instance is ZoneInstanceMusic && !c.IsPCFactionOrMinion)
 								{
-									TrySetAct(new AI_Fuck
-									{
-										target = c,
-										succubus = true
-									}, c);
+									flag = false;
 								}
-								TrySetAct(ACT.Chat, c);
-							}
-						}
-						if (c.host != EClass.pc)
-						{
-							TraitShackle traitShackle = c.pos.FindThing<TraitShackle>();
-							if (c.IsRestrainedResident)
-							{
-								if (traitShackle != null && traitShackle.AllowTraining)
+								if (flag || altAction)
 								{
-									TrySetAct(new AI_PracticeDummy
+									if (EClass.pc.HasElement(1216) && c.HasCondition<ConSleep>())
 									{
-										target = c
-									});
+										TrySetAct(new AI_Fuck
+										{
+											target = c,
+											succubus = true
+										}, c);
+									}
+									TrySetAct(ACT.Chat, c);
 								}
 							}
-							else if ((c.IsHostile() || altAction || c.isRestrained) && c.IsAliveInCurrentZone)
+							if (c.host != EClass.pc)
 							{
-								TrySetAct(ACT.Melee, c);
+								TraitShackle traitShackle = c.pos.FindThing<TraitShackle>();
+								if (c.IsRestrainedResident)
+								{
+									if (traitShackle != null && traitShackle.AllowTraining)
+									{
+										TrySetAct(new AI_PracticeDummy
+										{
+											target = c
+										});
+									}
+								}
+								else if ((c.IsHostile() || altAction || c.isRestrained) && c.IsAliveInCurrentZone)
+								{
+									TrySetAct(ACT.Melee, c);
+								}
 							}
-						}
-						if (c.IsPCPartyMinion && !c.Chara.IsEscorted() && altAction)
-						{
-							TrySetAct("ActBanishSummon", delegate
+							if (c.IsPCPartyMinion && !c.Chara.IsEscorted() && altAction)
 							{
-								EClass.pc.Say("summon_vanish", c);
-								c.pos.PlayEffect("vanish");
-								c.pos.PlaySound("vanish");
-								c.pos.PlayEffect("teleport");
-								c.Destroy();
-								return true;
-							}, c, null, 99);
+								TrySetAct("ActBanishSummon", delegate
+								{
+									EClass.pc.Say("summon_vanish", c);
+									c.pos.PlayEffect("vanish");
+									c.pos.PlaySound("vanish");
+									c.pos.PlayEffect("teleport");
+									c.Destroy();
+									return true;
+								}, c, null, 99);
+							}
 						}
 					}
 				}
