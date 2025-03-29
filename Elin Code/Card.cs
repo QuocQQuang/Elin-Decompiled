@@ -3059,11 +3059,11 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 
 	public void RemoveThing(Thing thing)
 	{
-		if ((GetRootCard() as Chara)?.held == thing)
+		Card rootCard = GetRootCard();
+		if (rootCard != null && rootCard.isChara && (rootCard.Chara.held == thing || (rootCard.IsPC && thing.things.Find((Thing t) => EClass.pc.held == t) != null)))
 		{
-			Chara obj = GetRootCard() as Chara;
-			obj.held = null;
-			if (obj.IsPC)
+			rootCard.Chara.held = null;
+			if (rootCard.IsPC)
 			{
 				WidgetCurrentTool instance = WidgetCurrentTool.Instance;
 				if ((bool)instance && instance.selected != -1 && instance.selectedButton.card != null && instance.selectedButton.card == thing)
@@ -4115,13 +4115,11 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			}
 			if (!isDestroyed)
 			{
-				Debug.Log(EClass.player.invlunerable);
-				Debug.Log(EClass.pc.ai?.ToString() + "/" + EClass.pc.ai.IsRunning);
 				Die(e, origin, attackSource);
 				if (trait.CanBeSmashedToDeath)
 				{
 					Rand.SetSeed(uid);
-					if (EClass.rnd(3) == 0)
+					if (EClass.rnd(3) == 0 && !isCrafted && !isCopy)
 					{
 						string text2 = new int[18]
 						{
@@ -4148,11 +4146,11 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 						{
 							text2 = "money2";
 						}
-						if (EClass.rnd(20) == 0)
+						if (EClass.rnd(20) == 0 || EClass.debug.enable)
 						{
 							text2 = "medal";
 						}
-						EClass._zone.AddCard(ThingGen.Create(text2).SetNum((!(text2 == "money")) ? 1 : EClass.rndHalf(100)), pos);
+						EClass._zone.AddCard(ThingGen.Create(text2).SetNum((!(text2 == "money")) ? 1 : EClass.rndHalf(100)).SetHidden(hide: false), pos);
 					}
 					Rand.SetSeed();
 				}
@@ -5191,10 +5189,11 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		c_extraNameRef = (c1.IsPC ? EClass.pc.c_altName : c1.c_extraNameRef);
 	}
 
-	public void SetHidden(bool hide = true)
+	public Card SetHidden(bool hide = true)
 	{
 		isHidden = hide;
 		pos.cell.Refresh();
+		return this;
 	}
 
 	public virtual MoveResult _Move(Point p, MoveType type = MoveType.Walk)
@@ -6702,9 +6701,16 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			{
 				p *= 0.5;
 			}
-			if ((uint)(priceType - 1) <= 1u && (category.IsChildOf("vegi") || category.IsChildOf("fruit")))
+			if ((uint)(priceType - 1) <= 1u)
 			{
-				p *= ((EClass.pc.faith == EClass.game.religions.Harvest) ? 3f : 2f);
+				if (category.IsChildOf("fish"))
+				{
+					p *= ((EClass.pc.faith == EClass.game.religions.Luck) ? 1.5f : 1f);
+				}
+				if (category.IsChildOf("vegi") || category.IsChildOf("fruit"))
+				{
+					p *= ((EClass.pc.faith == EClass.game.religions.Harvest) ? 3f : 2f);
+				}
 			}
 		}
 		if (id == "rod_wish")

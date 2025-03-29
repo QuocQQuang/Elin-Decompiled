@@ -451,11 +451,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\QQ\\Desktop\\Elin Decompiled code\\EA 23.100\\Elin.csproj",
+      "projectUniqueName": "C:\\Users\\QQ\\Desktop\\Git\\Elin-Decompiled\\Elin Code\\Elin.csproj",
       "projectName": "Elin",
-      "projectPath": "C:\\Users\\QQ\\Desktop\\Elin Decompiled code\\EA 23.100\\Elin.csproj",
+      "projectPath": "C:\\Users\\QQ\\Desktop\\Git\\Elin-Decompiled\\Elin Code\\Elin.csproj",
       "packagesPath": "C:\\Users\\QQ\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\QQ\\Desktop\\Elin Decompiled code\\EA 23.100\\obj\\",
+      "outputPath": "C:\\Users\\QQ\\Desktop\\Git\\Elin-Decompiled\\Elin Code\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
