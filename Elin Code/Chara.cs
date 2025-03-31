@@ -6445,7 +6445,7 @@ public class Chara : Card, IPathfindWalker
 				if (questDebt != null && questDebt.paid)
 				{
 					questDebt.stage++;
-					if (questDebt.stage > 6)
+					if (questDebt.stage > 7)
 					{
 						questDebt.stage = 1;
 					}
