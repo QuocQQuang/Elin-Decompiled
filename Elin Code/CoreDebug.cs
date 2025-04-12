@@ -448,6 +448,7 @@ public class CoreDebug : EScriptable
 			thing.AddCard(ThingGen.Create("mathammer", 102)).SetNum(10);
 			thing.AddCard(ThingGen.Create("mathammer", 33)).SetNum(10);
 			thing.AddCard(ThingGen.Create("mathammer", 18)).SetNum(10);
+			thing.AddCard(ThingGen.Create("mathammer", 10)).SetNum(99);
 			EClass.pc.AddCard(thing);
 			thing = ThingGen.Create("pouch");
 			for (int l = 0; l < 30; l++)
@@ -924,6 +925,8 @@ public class CoreDebug : EScriptable
 		}
 		if (Input.GetKeyDown(KeyCode.F2))
 		{
+			EClass._zone.development += 10;
+			EClass._zone.development *= EClass._zone.development;
 			EClass.pc.Pick(ThingGen.CreateSpellbook(8550));
 			EClass.pc.Pick(ThingGen.CreatePotion(8550));
 			EClass.pc.Pick(ThingGen.CreateSpellbook(9004));

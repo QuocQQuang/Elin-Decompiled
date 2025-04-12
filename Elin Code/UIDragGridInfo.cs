@@ -84,11 +84,11 @@ public class UIDragGridInfo : EMono
 						{
 							Util.Instantiate(moldOr, b);
 						}
-						AddThing(text);
+						AddThing(text, null);
 					}
 				}
 				Util.Instantiate(moldEqual, b);
-				AddThing(a.thing);
+				AddThing(a.thing, (a.type == "FixedResource") ? "noInherit" : null);
 			},
 			onList = delegate
 			{
@@ -110,11 +110,11 @@ public class UIDragGridInfo : EMono
 		}
 		window.SetActive(enable: true);
 		window.RebuildLayout(recursive: true);
-		void AddThing(string id)
+		void AddThing(string id, string lang)
 		{
 			if (id.IsEmpty() || id == "notImplemented" || id == "any")
 			{
-				Util.Instantiate(moldUnknown, P_1.b).GetComponentInChildren<UIButton>().tooltip.lang = "???";
+				Util.Instantiate(moldUnknown, P_2.b).GetComponentInChildren<UIButton>().tooltip.lang = "???";
 			}
 			else
 			{
@@ -133,17 +133,19 @@ public class UIDragGridInfo : EMono
 				{
 					mat = ((!(array3[1] == "gelatin")) ? EMono.sources.materials.alias[array3[1]] : EMono.sources.materials.alias["jelly"]);
 				}
-				Transform transform = Util.Instantiate(moldThing, P_1.b);
+				Transform transform = Util.Instantiate(moldThing, P_2.b);
 				Image componentInChildren = transform.GetComponentInChildren<Image>();
 				UIButton component = componentInChildren.GetComponent<UIButton>();
 				cardRow.SetImage(componentInChildren, null, cardRow.GetColorInt(mat));
 				string s = cardRow.GetName();
-				if (!text2.IsEmpty())
+				if (!text2.IsEmpty() || lang != null)
 				{
-					Transform obj = Util.Instantiate(moldCat, transform);
-					string @ref = EMono.sources.categories.map[text2].GetName();
-					obj.GetComponentInChildren<UIText>().SetText("category".lang());
-					s = "ingCat".lang(@ref);
+					Util.Instantiate(moldCat, transform).GetComponentInChildren<UIText>().SetText((lang ?? "category").lang());
+					if (lang == null)
+					{
+						string @ref = EMono.sources.categories.map[text2].GetName();
+						s = "ingCat".lang(@ref);
+					}
 				}
 				component.tooltip.lang = s.ToTitleCase();
 			}

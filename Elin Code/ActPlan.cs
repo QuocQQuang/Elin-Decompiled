@@ -96,6 +96,7 @@ public class ActPlan : EClass
 			AIAct aIAct = act as AIAct;
 			if (act.IsAct)
 			{
+				Act.CC = EClass.pc;
 				if (act.PerformDistance != -1 && (num > act.PerformDistance || (num == 1 && !flag)))
 				{
 					cc.SetAIImmediate(new DynamicAIAct(act.GetText(), () => act.Perform(cc, tc, pos))
@@ -500,71 +501,61 @@ public class ActPlan : EClass
 			}
 			items.ForeachReverse(delegate(Card _c)
 			{
-				if (_c.isThing)
+				Chara c = _c.Chara;
+				if (c != null && !c.IsPC && EClass.pc.CanSee(c))
 				{
-					if (_c.trait.CanBeAttacked && !(_c.trait is TraitTrainingDummy))
+					int num = c.Dist(EClass.pc);
+					if (num <= 1 || !EClass.pc.isBlind)
 					{
-						TrySetAct(ACT.Melee, _c);
-					}
-				}
-				else
-				{
-					Chara c = _c.Chara;
-					if (c != null && !c.IsPC && EClass.pc.CanSee(c))
-					{
-						int num = c.Dist(EClass.pc);
-						if (num <= 1 || !EClass.pc.isBlind)
+						if (!EClass.pc.isBlind && !c.IsHostile() && (input == ActInput.AllAction || !(c.IsPCParty || c.IsMinion || isKey)) && (input == ActInput.AllAction || !c.IsNeutral() || c.quest != null || EClass.game.quests.IsDeliverTarget(c)) && c.isSynced && num <= 2)
 						{
-							if (!EClass.pc.isBlind && !c.IsHostile() && (input == ActInput.AllAction || !(c.IsPCParty || c.IsMinion || isKey)) && (input == ActInput.AllAction || !c.IsNeutral() || c.quest != null || EClass.game.quests.IsDeliverTarget(c)) && c.isSynced && num <= 2)
+							bool flag = !c.HasCondition<ConSuspend>() && (!c.isRestrained || !c.IsPCFaction);
+							if (EClass._zone.instance is ZoneInstanceMusic && !c.IsPCFactionOrMinion)
 							{
-								bool flag = !c.HasCondition<ConSuspend>() && (!c.isRestrained || !c.IsPCFaction);
-								if (EClass._zone.instance is ZoneInstanceMusic && !c.IsPCFactionOrMinion)
+								flag = false;
+							}
+							if (flag || altAction)
+							{
+								if (EClass.pc.HasElement(1216) && c.HasCondition<ConSleep>())
 								{
-									flag = false;
-								}
-								if (flag || altAction)
-								{
-									if (EClass.pc.HasElement(1216) && c.HasCondition<ConSleep>())
+									TrySetAct(new AI_Fuck
 									{
-										TrySetAct(new AI_Fuck
-										{
-											target = c,
-											succubus = true
-										}, c);
-									}
-									TrySetAct(ACT.Chat, c);
+										target = c,
+										succubus = true
+									}, c);
 								}
+								TrySetAct(ACT.Chat, c);
 							}
-							if (c.host != EClass.pc)
+						}
+						if (c.host != EClass.pc)
+						{
+							TraitShackle traitShackle = c.pos.FindThing<TraitShackle>();
+							if (c.IsRestrainedResident)
 							{
-								TraitShackle traitShackle = c.pos.FindThing<TraitShackle>();
-								if (c.IsRestrainedResident)
+								if (traitShackle != null && traitShackle.AllowTraining)
 								{
-									if (traitShackle != null && traitShackle.AllowTraining)
+									TrySetAct(new AI_PracticeDummy
 									{
-										TrySetAct(new AI_PracticeDummy
-										{
-											target = c
-										});
-									}
-								}
-								else if ((c.IsHostile() || altAction || c.isRestrained) && c.IsAliveInCurrentZone)
-								{
-									TrySetAct(ACT.Melee, c);
+										target = c
+									});
 								}
 							}
-							if (c.IsPCPartyMinion && !c.Chara.IsEscorted() && altAction)
+							else if ((c.IsHostile() || altAction || c.isRestrained) && c.IsAliveInCurrentZone)
 							{
-								TrySetAct("ActBanishSummon", delegate
-								{
-									EClass.pc.Say("summon_vanish", c);
-									c.pos.PlayEffect("vanish");
-									c.pos.PlaySound("vanish");
-									c.pos.PlayEffect("teleport");
-									c.Destroy();
-									return true;
-								}, c, null, 99);
+								TrySetAct(ACT.Melee, c);
 							}
+						}
+						if (c.IsPCPartyMinion && !c.Chara.IsEscorted() && altAction)
+						{
+							TrySetAct("ActBanishSummon", delegate
+							{
+								EClass.pc.Say("summon_vanish", c);
+								c.pos.PlayEffect("vanish");
+								c.pos.PlaySound("vanish");
+								c.pos.PlayEffect("teleport");
+								c.Destroy();
+								return true;
+							}, c, null, 99);
 						}
 					}
 				}
@@ -885,6 +876,17 @@ public class ActPlan : EClass
 					pos = pos.Copy()
 				});
 			}
+			if (list.Count != 0 && input != ActInput.AllAction)
+			{
+				return;
+			}
+			items.ForeachReverse(delegate(Card _c)
+			{
+				if (_c.isThing && _c.trait.CanBeAttacked && !(_c.trait is TraitTrainingDummy))
+				{
+					TrySetAct(ACT.Melee, _c);
+				}
+			});
 		}
 		else
 		{

@@ -1989,6 +1989,7 @@ public class Chara : Card, IPathfindWalker
 				}
 			}
 		}
+		body.RefreshBodyParts();
 		elements.ApplyElementMap(base.uid, SourceValueType.Chara, race.elementMap, base.DefaultLV, remove, applyFeat: true);
 	}
 
@@ -2899,7 +2900,7 @@ public class Chara : Card, IPathfindWalker
 						{
 							t.Destroy();
 						}
-						else
+						else if (!t.IsUnique && !t.trait.CanBeDestroyed)
 						{
 							t.SetPlaceState(PlaceState.roaming);
 						}
@@ -4942,6 +4943,7 @@ public class Chara : Card, IPathfindWalker
 		}
 		daysStarved = 0;
 		isDead = true;
+		ClearTempElements();
 		enemy = null;
 		_cooldowns = null;
 		base.isSale = false;
@@ -9362,6 +9364,15 @@ public class Chara : Card, IPathfindWalker
 					ModTempElement(ele, Mathf.Clamp(p / 20 + EClass.rnd(p / 20), 1, -element.vBase));
 				}
 			}
+		}
+	}
+
+	public void ClearTempElements()
+	{
+		if (tempElements != null)
+		{
+			tempElements.SetParent();
+			tempElements = null;
 		}
 	}
 }

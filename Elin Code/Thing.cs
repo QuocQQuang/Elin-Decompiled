@@ -856,7 +856,7 @@ public class Thing : Card
 				text2 = array[0] + Environment.NewLine + text3 + array[1];
 			}
 		}
-		if (flag)
+		if (flag && !(trait is TraitPotionAlchemy))
 		{
 			text2 = recipe.GetName();
 		}
@@ -1059,6 +1059,10 @@ public class Thing : Card
 		if (base.isCopy)
 		{
 			AddText("isCopy", FontColor.Default);
+		}
+		if (flag && HasTag(CTAG.noMix))
+		{
+			AddText("isNoMix", FontColor.Default);
 		}
 		if (!trait.CanBeDestroyed)
 		{
@@ -1602,6 +1606,10 @@ public class Thing : Card
 			return false;
 		}
 		if (base.c_altName != to.c_altName)
+		{
+			return false;
+		}
+		if (base.Num + to.Num <= 0)
 		{
 			return false;
 		}

@@ -2596,8 +2596,6 @@ public class Zone : Spatial, ICardParent, IInspect
 			num = ((dangerLv - 1) % 50 + 5) * 150 / 100;
 		}
 		CardRow cardRow = (setting.id.IsEmpty() ? spawnList.Select(num, setting.levelRange) : EClass.sources.cards.map[setting.id]);
-		Debug.Log(cardRow);
-		Debug.Log(cardRow.id);
 		int num2 = ((setting.fixedLv == -1) ? cardRow.LV : setting.fixedLv);
 		if (ScaleMonsterLevel)
 		{
