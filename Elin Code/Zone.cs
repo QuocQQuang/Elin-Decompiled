@@ -2310,6 +2310,15 @@ public class Zone : Spatial, ICardParent, IInspect
 						EClass._zone.AddCard(t2, randomSurface2).Install();
 					}
 				}
+				num2 = 4 + EClass.rnd(5);
+				for (int k = 0; k < num2; k++)
+				{
+					Point randomSurface3 = EClass._map.bounds.GetRandomSurface(centered: false, walkable: true, allowWater: true);
+					if (!randomSurface3.HasObj && (randomSurface3.cell.IsTopWaterAndNoSnow || EClass.rnd(6) == 0))
+					{
+						EClass._zone.AddCard(ThingGen.Create("70"), randomSurface3);
+					}
+				}
 			}
 			if (EClass.rnd(8) == 0)
 			{

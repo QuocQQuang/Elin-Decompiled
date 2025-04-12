@@ -10,11 +10,11 @@ public class CalcMoney : EClass
 	public static int Invest(long a, float mod = 2f)
 	{
 		long num = a * 100 / (long)(100f + (float)Mathf.Max(0, EClass.pc.CHA / 2 + EClass.pc.Evalue(292)) * mod);
-		if (num >= 0 && num < 500000000)
+		if (num >= 0 && num < 100000000)
 		{
 			return (int)num;
 		}
-		return 500000000;
+		return 100000000;
 	}
 
 	public static int Meal(Chara c)
