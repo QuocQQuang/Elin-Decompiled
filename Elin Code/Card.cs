@@ -4261,12 +4261,15 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		}
 		if (dmg > 0)
 		{
-			int a3 = 100 * (dmg * 100 / MaxHP) / 100;
+			int a3 = (int)(100L * (long)(dmg * 100 / MaxHP) / 100) + 1;
 			a3 = Mathf.Min(a3, Chara.isRestrained ? 15 : 200);
-			elements.ModExp(GetArmorSkill(), a3);
-			if (Chara.body.GetAttackStyle() == AttackStyle.Shield)
+			if (a3 > 0)
 			{
-				elements.ModExp(123, a3);
+				elements.ModExp(GetArmorSkill(), a3);
+				if (Chara.body.GetAttackStyle() == AttackStyle.Shield)
+				{
+					elements.ModExp(123, a3);
+				}
 			}
 		}
 		int num11 = ((EClass.rnd(2) == 0) ? 1 : 0);
