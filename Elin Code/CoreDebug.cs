@@ -995,6 +995,9 @@ public class CoreDebug : EScriptable
 				Thing thing2 = ThingGen.CreateFromCategory("fish", 999);
 				thing2.SetTier(EScriptable.rnd(4));
 				EClass.pc.Pick(thing2);
+				thing2 = ThingGen.Create("89");
+				thing2.SetTier(EScriptable.rnd(4));
+				EClass.pc.Pick(thing2);
 			}
 			EClass.pc.PlayEffect("phoenix");
 			return;

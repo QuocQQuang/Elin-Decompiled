@@ -549,7 +549,7 @@ public class AI_Idle : AIAct
 				}
 			});
 		}
-		if (EClass.rnd(100) == 0 && owner.trait.CanFish)
+		if (EClass.rnd(100) == 0 && owner.trait.CanFish && owner.stamina.value > 0)
 		{
 			Point fishingPoint = AI_Fish.GetFishingPoint(owner.pos);
 			if (fishingPoint.IsValid)

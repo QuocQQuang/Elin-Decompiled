@@ -98,7 +98,7 @@ public class AI_Fish : AIAct
 				Fail();
 				return;
 			}
-			int num = thing.Num;
+			int num = thing.Num * (thing.tier + 1);
 			EClass._zone.AddCard(thing, owner.pos);
 			thing.renderer.PlayAnime(AnimeID.Jump);
 			owner.Say("fish_get", owner, thing);
@@ -337,9 +337,14 @@ public class AI_Fish : AIAct
 		}
 		else
 		{
-			int num3 = EClass.rnd(num * 2) + 1;
-			thing = ThingGen.Create("fish", -1, num3);
-			num2 = EClass.rnd(num / (num3 + 10)) + 1;
+			int lv = EClass.rnd(num * 2) + 1;
+			int num3 = 0;
+			if (EClass.rnd(EClass.debug.enable ? 1 : 5) == 0)
+			{
+				num3 = Mathf.Min(EClass.rnd(EClass.rnd(EClass.rnd(EClass.curve(num, 100, 50, 70) + 50))) / 50, 3);
+			}
+			thing = ThingGen.Create("fish", -1, lv);
+			num2 = EClass.rnd(num / (thing.source.LV + 10)) / (num3 + 1) + 1;
 			int num4 = 5;
 			if (EClass.Branch != null)
 			{
@@ -349,14 +354,17 @@ public class AI_Fish : AIAct
 			{
 				num2++;
 			}
-			if (EClass.rnd(EClass.debug.enable ? 3 : 25) == 0)
+			if (num3 != 0)
 			{
-				thing.SetTier(Mathf.Min(EClass.rnd(EClass.rnd(num + 50)) / 50, 3));
+				thing.SetTier(num3);
 			}
 		}
 		if (thing != null)
 		{
-			thing.SetNum(num2);
+			if (num2 > 1)
+			{
+				thing.SetNum(num2);
+			}
 			thing.SetBlessedState(BlessedState.Normal);
 		}
 		return thing;
