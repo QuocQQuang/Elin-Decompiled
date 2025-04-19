@@ -1347,6 +1347,7 @@ public class Chara : Card, IPathfindWalker
 			_race = null;
 			_job = null;
 			num = 10 + EClass.rnd(40);
+			ChangeMaterial(race.material, ignoreFixedMaterial: true);
 		}
 		bio = new Biography();
 		bio.Generate(this);
@@ -6904,8 +6905,33 @@ public class Chara : Card, IPathfindWalker
 		}
 	}
 
+	public Thing FindBestFoodToEat()
+	{
+		Thing result = null;
+		int num = -1;
+		if (IsPC)
+		{
+			return null;
+		}
+		foreach (Thing item in things.List((Thing t) => CanEat(t, shouldEat: true) && !t.c_isImportant, onlyAccessible: true))
+		{
+			int num2 = CountNumEaten(item);
+			int num3 = 100 - num2;
+			if (num3 > num)
+			{
+				result = item;
+				num = num3;
+			}
+		}
+		return result;
+	}
+
 	public void InstantEat(Thing t = null, bool sound = true)
 	{
+		if (t == null)
+		{
+			t = FindBestFoodToEat();
+		}
 		if (t == null)
 		{
 			t = things.Find((Thing a) => CanEat(a, shouldEat: true) && !a.c_isImportant);
@@ -7787,11 +7813,7 @@ public class Chara : Card, IPathfindWalker
 		{
 			return false;
 		}
-		if (trait is TraitBard && t.trait is TraitToolMusic)
-		{
-			return false;
-		}
-		if (t.trait is TraitCurrency)
+		if (t.trait is TraitCurrency || t.trait is TraitTool)
 		{
 			return false;
 		}
@@ -7828,7 +7850,7 @@ public class Chara : Card, IPathfindWalker
 			{
 				return false;
 			}
-			if (t.IsRangedWeapon && !things.IsFull())
+			if (!things.IsFull() && t.IsRangedWeapon)
 			{
 				return false;
 			}

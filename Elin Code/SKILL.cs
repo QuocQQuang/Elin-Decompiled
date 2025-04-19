@@ -142,7 +142,7 @@ public class SKILL
 
 	public const int eleNerve = 918;
 
-	public const int eleChaos = 920;
+	public const int eleHoly = 919;
 
 	public const int eleMagic = 921;
 
@@ -200,7 +200,7 @@ public class SKILL
 
 	public const int eleMind = 914;
 
-	public const int eleHoly = 919;
+	public const int eleChaos = 920;
 
 	public const int eleLightning = 912;
 
@@ -222,9 +222,9 @@ public class SKILL
 
 	public const int farming = 286;
 
-	public const int cooking = 287;
-
 	public const int eleDarkness = 913;
+
+	public const int building = 288;
 
 	public const int appraising = 289;
 
@@ -234,13 +234,13 @@ public class SKILL
 
 	public const int investing = 292;
 
-	public const int building = 288;
+	public const int cooking = 287;
 
 	public const int regeneration = 300;
 
-	public const int eleCold = 911;
-
 	public const int disarmTrap = 293;
+
+	public const int eleFire = 910;
 
 	public const int env = 313;
 
@@ -250,7 +250,7 @@ public class SKILL
 
 	public const int hygine = 310;
 
-	public const int eleFire = 910;
+	public const int eleCold = 911;
 
 	public const int faith = 306;
 
@@ -262,9 +262,9 @@ public class SKILL
 
 	public const int controlmana = 302;
 
-	public const int memorization = 307;
-
 	public const int meditation = 301;
+
+	public const int memorization = 307;
 
 	public static readonly int[] IDS = new int[133]
 	{
@@ -275,13 +275,13 @@ public class SKILL
 		67, 68, 70, 71, 72, 73, 74, 75, 57, 76,
 		78, 79, 80, 90, 91, 92, 93, 100, 101, 102,
 		104, 105, 106, 107, 77, 250, 133, 256, 916, 917,
-		918, 920, 921, 922, 923, 924, 925, 926, 950, 951,
+		918, 919, 921, 922, 923, 924, 925, 926, 950, 951,
 		952, 953, 915, 954, 956, 957, 958, 959, 960, 961,
 		962, 963, 964, 965, 970, 971, 972, 255, 955, 914,
-		919, 912, 257, 258, 259, 260, 261, 280, 281, 285,
-		286, 287, 913, 289, 290, 291, 292, 288, 300, 911,
-		293, 313, 312, 311, 310, 910, 306, 305, 304, 303,
-		302, 307, 301
+		920, 912, 257, 258, 259, 260, 261, 280, 281, 285,
+		286, 913, 288, 289, 290, 291, 292, 287, 300, 293,
+		910, 313, 312, 311, 310, 911, 306, 305, 304, 303,
+		302, 301, 307
 	};
 }
 public class Skill : Element

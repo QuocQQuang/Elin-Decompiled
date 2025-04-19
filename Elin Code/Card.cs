@@ -2551,6 +2551,15 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		return GetRootCard() == c;
 	}
 
+	public T FindTool<T>() where T : Trait
+	{
+		if (IsPC)
+		{
+			return Tool?.trait as T;
+		}
+		return things.Find<T>()?.trait as T;
+	}
+
 	[OnSerializing]
 	private void _OnSerializing(StreamingContext context)
 	{
@@ -3601,13 +3610,14 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		tier = a;
 		if (setTraits)
 		{
+			int num = ((a == 1) ? 180 : ((a == 2) ? 400 : ((a >= 3) ? 600 : 0)));
 			if (a > 0)
 			{
 				foreach (Element value in elements.dict.Values)
 				{
 					if (value.IsFoodTrait || value.IsTrait)
 					{
-						elements.SetTo(value.id, value.Value * (a * 180) / 100);
+						elements.SetTo(value.id, value.Value * num / 100);
 					}
 				}
 			}
@@ -5105,11 +5115,11 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		}
 		if (flag2)
 		{
-			if (FoodEffect.IsHumanFlesh(c.sourceCard))
+			if (race.IsHuman)
 			{
 				elements.SetBase(708, 1);
 			}
-			if (FoodEffect.IsUndeadFlesh(c.sourceCard))
+			if (race.IsUndead)
 			{
 				elements.SetBase(709, 1);
 			}
@@ -6649,6 +6659,12 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			}
 			switch (currency)
 			{
+			case CurrencyType.Ecopo:
+				if (id == "plat")
+				{
+					return 500;
+				}
+				break;
 			case CurrencyType.Plat:
 			{
 				string text = id;

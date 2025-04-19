@@ -990,6 +990,10 @@ public class CoreDebug : EScriptable
 		}
 		if (Input.GetKeyDown(KeyCode.F4))
 		{
+			foreach (Chara member in EClass.pc.party.members)
+			{
+				member.InstantEat();
+			}
 			for (int j = 0; j < 10; j++)
 			{
 				Thing thing2 = ThingGen.CreateFromCategory("fish", 999);

@@ -63,7 +63,7 @@ public class AI_Idle : AIAct
 				Thing thing = owner.things.Find((Thing a) => owner.CanEat(a, owner.IsPCFaction) && !a.c_isImportant, recursive: false);
 				if (thing == null && owner.IsPCFaction)
 				{
-					thing = owner.things.Find((Thing a) => owner.CanEat(a) && !a.c_isImportant, recursive: false);
+					thing = owner.FindBestFoodToEat();
 				}
 				if (thing == null && owner.IsPCFaction && EClass._zone.IsPCFaction)
 				{

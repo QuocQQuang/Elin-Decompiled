@@ -3,40 +3,6 @@ using UnityEngine;
 
 public class FoodEffect : EClass
 {
-	public static bool IsHumanFlesh(CardRow r)
-	{
-		if (r == null)
-		{
-			return false;
-		}
-		if (r.id == "chara")
-		{
-			return EClass.pc.race.tag.Contains("human");
-		}
-		if (r.isChara)
-		{
-			return EClass.sources.races.map[EClass.sources.charas.map[r.id].race].tag.Contains("human");
-		}
-		return false;
-	}
-
-	public static bool IsUndeadFlesh(CardRow r)
-	{
-		if (r == null)
-		{
-			return false;
-		}
-		if (r.id == "chara")
-		{
-			return EClass.pc.race.tag.Contains("undead");
-		}
-		if (r.isChara)
-		{
-			return EClass.sources.races.map[EClass.sources.charas.map[r.id].race].tag.Contains("undead");
-		}
-		return false;
-	}
-
 	public static void Proc(Chara c, Thing food)
 	{
 		food.CheckJustCooked();
@@ -56,11 +22,22 @@ public class FoodEffect : EClass
 		bool flag4 = c.HasElement(1205);
 		bool flag5 = food.IsDecayed || flag3;
 		c.AddFoodHistory(food);
-		int num6 = c.CountNumEaten(food);
-		Debug.Log(c.Name + "/" + food.id + "/" + num6);
-		if (num6 != -1 && num6 >= 2 && num6 > 3 && EClass.rnd(num6) >= 3)
+		if (c.IsPCFaction && !c.IsPC)
 		{
-			c.Talk("foodBored");
+			int num6 = c.CountNumEaten(food);
+			bool flag6 = c.GetFavFood().id == food.id;
+			Debug.Log(c.Name + "/" + food.id + "/" + num6);
+			if (num6 < 2 || flag6)
+			{
+				if (num6 == 1 || flag6 || EClass.rnd(4) == 0)
+				{
+					c.Talk("foodNice");
+				}
+			}
+			else if (num6 > 3 && EClass.rnd(num6) >= 3)
+			{
+				c.Talk("foodBored");
+			}
 		}
 		if (food.IsBlessed)
 		{
@@ -178,11 +155,11 @@ public class FoodEffect : EClass
 				float num8 = num2 * (float)value.Value;
 				if (value.source.category == "food" && c.IsPC)
 				{
-					bool flag6 = num8 >= 0f;
-					string text = value.source.GetText(flag6 ? "textInc" : "textDec", returnNull: true);
+					bool flag7 = num8 >= 0f;
+					string text = value.source.GetText(flag7 ? "textInc" : "textDec", returnNull: true);
 					if (text != null)
 					{
-						Msg.SetColor(flag6 ? "positive" : "negative");
+						Msg.SetColor(flag7 ? "positive" : "negative");
 						c.Say(text);
 					}
 				}
