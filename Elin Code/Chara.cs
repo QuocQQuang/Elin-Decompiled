@@ -1460,6 +1460,10 @@ public class Chara : Card, IPathfindWalker
 				}
 			}
 			break;
+		case "baby":
+		case "ika":
+			SetFeat(1232, 3);
+			break;
 		}
 		if (HasTag(CTAG.random_color))
 		{
