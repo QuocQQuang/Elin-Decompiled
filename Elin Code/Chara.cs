@@ -8876,6 +8876,7 @@ public class Chara : Card, IPathfindWalker
 			if (type == CureType.Death || type == CureType.Boss)
 			{
 				SAN.Mod(-20);
+				RemoveCondition<ConBrightnessOfLife>();
 			}
 			if (type == CureType.Jure)
 			{
@@ -9510,13 +9511,10 @@ public class Chara : Card, IPathfindWalker
 
 	public void EnhanceTempElements(int p, bool body, bool mind, bool onlyRenew = false)
 	{
-		if (body)
+		int[] array = (body ? Element.List_Body : Element.List_Mind);
+		foreach (int ele in array)
 		{
-			EnhanceTempElement(Element.List_Body.RandomItem(), p, onlyRenew);
-		}
-		if (mind)
-		{
-			EnhanceTempElement(Element.List_Mind.RandomItem(), p, onlyRenew);
+			EnhanceTempElement(ele, p, onlyRenew);
 		}
 	}
 
