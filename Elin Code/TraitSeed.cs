@@ -46,6 +46,10 @@ public class TraitSeed : Trait
 		{
 			n.AddText("isWaterCrop");
 		}
+		if (row.tag.Contains("undersea"))
+		{
+			n.AddText("isUnderseaCrop");
+		}
 		if (row.growth != null && row.growth.NeedSunlight)
 		{
 			n.AddText("isNeedSun");
@@ -103,7 +107,7 @@ public class TraitSeed : Trait
 			{
 				num3 = 2 + num3 * 2;
 			}
-			if (EClass.rnd(num3) == 0)
+			if (EClass.rnd(num3) == 0 && EClass._zone.IsPCFactionOrTent)
 			{
 				int num4 = Mathf.Max(5, EClass.pc.Evalue(286)) - thing2.encLV;
 				if (num4 <= 0)

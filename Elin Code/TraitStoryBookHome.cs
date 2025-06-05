@@ -6,6 +6,7 @@ public class TraitStoryBookHome : TraitScroll
 {
 	public override void OnRead(Chara c)
 	{
+		Dictionary<string, int> dict = new Dictionary<string, int>();
 		List<SourceQuest.Row> list = EClass.sources.quests.rows.Where((SourceQuest.Row q) => IsAvailable(q)).ToList();
 		EClass.ui.AddLayer<LayerList>().SetSize().SetList2(list, (SourceQuest.Row a) => GetTitle(a), delegate(SourceQuest.Row a, ItemGeneral b)
 		{
@@ -28,15 +29,14 @@ public class TraitStoryBookHome : TraitScroll
 		{
 			return EClass.game.cards.globalCharas.Find(id);
 		}
-		static string GetTitle(SourceQuest.Row r)
+		string GetTitle(SourceQuest.Row r)
 		{
 			string name = r.GetName();
 			string text3 = Regex.Replace(r.id, "([0-9]*$)", "");
 			string str2 = r.id.Replace(text3, "");
-			int num2 = 1;
 			if (!str2.IsEmpty())
 			{
-				num2 = 1 + str2.ToInt();
+				str2.ToInt();
 			}
 			if (name.IsEmpty())
 			{
@@ -46,7 +46,12 @@ public class TraitStoryBookHome : TraitScroll
 					name = r.GetName();
 				}
 			}
-			return name + " " + num2;
+			if (!dict.ContainsKey(name))
+			{
+				dict.Add(name, 0);
+			}
+			dict[name]++;
+			return name + " " + dict[name];
 		}
 		static bool IsAvailable(SourceQuest.Row r)
 		{

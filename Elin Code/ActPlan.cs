@@ -549,13 +549,28 @@ public class ActPlan : EClass
 						{
 							TrySetAct("ActBanishSummon", delegate
 							{
-								EClass.pc.Say("summon_vanish", c);
-								c.pos.PlayEffect("vanish");
-								c.pos.PlaySound("vanish");
-								c.pos.PlayEffect("teleport");
-								c.Destroy();
+								Banish(c);
 								return true;
 							}, c, null, 99);
+							List<Chara> list = new List<Chara>();
+							foreach (Chara chara in EClass._map.charas)
+							{
+								if (chara.IsPCPartyMinion && !chara.IsEscorted())
+								{
+									list.Add(chara);
+								}
+							}
+							if (list.Count > 1)
+							{
+								TrySetAct("ActBanishSummonAll", delegate
+								{
+									foreach (Chara item in list)
+									{
+										Banish(item);
+									}
+									return true;
+								}, c, null, 99);
+							}
 						}
 					}
 				}
@@ -577,8 +592,8 @@ public class ActPlan : EClass
 							if (input == ActInput.LeftMouse && c2.IsPCFaction && !c2.IsPC && pos.FindThing<TraitHitchingPost>() != null)
 							{
 								Chara ride = c2;
-								List<string> list = EClass.core.pccs.sets["ride"].map["body"].map.Keys.ToList();
-								int index = list.IndexOf(ride.c_idRidePCC);
+								List<string> list2 = EClass.core.pccs.sets["ride"].map["body"].map.Keys.ToList();
+								int index = list2.IndexOf(ride.c_idRidePCC);
 								if (index == -1)
 								{
 									index = 0;
@@ -586,11 +601,11 @@ public class ActPlan : EClass
 								TrySetAct("ActChangeRideSkin", delegate
 								{
 									UIContextMenu uIContextMenu = EClass.ui.CreateContextMenuInteraction();
-									uIContextMenu.AddSlider("rideSkin", (float a) => list[(int)a].Split('-')[0] ?? "", index, delegate(float a)
+									uIContextMenu.AddSlider("rideSkin", (float a) => list2[(int)a].Split('-')[0] ?? "", index, delegate(float a)
 									{
-										ride.c_idRidePCC = list[(int)a];
+										ride.c_idRidePCC = list2[(int)a];
 										ride._CreateRenderer();
-									}, 0f, list.Count - 1, isInt: true, hideOther: false);
+									}, 0f, list2.Count - 1, isInt: true, hideOther: false);
 									uIContextMenu.Show();
 									return false;
 								}, c2);
@@ -812,11 +827,11 @@ public class ActPlan : EClass
 						IList<Card> _cards = items.Copy();
 						TrySetAct("actPickAll", delegate
 						{
-							foreach (Card item in _cards)
+							foreach (Card item2 in _cards)
 							{
-								if (item.isThing && item.placeState == PlaceState.roaming)
+								if (item2.isThing && item2.placeState == PlaceState.roaming)
 								{
-									EClass.pc.Pick(item.Thing);
+									EClass.pc.Pick(item2.Thing);
 								}
 							}
 							return true;
@@ -961,6 +976,14 @@ public class ActPlan : EClass
 			{
 				WidgetCurrentTool.Instance.placer.Refresh();
 			}
+		}
+		static void Banish(Chara m)
+		{
+			EClass.pc.Say("summon_vanish", m);
+			m.pos.PlayEffect("vanish");
+			m.pos.PlaySound("vanish");
+			m.pos.PlayEffect("teleport");
+			m.Destroy();
 		}
 	}
 }

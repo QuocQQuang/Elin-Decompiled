@@ -52,11 +52,11 @@ public class ENC
 
 	public const int mod_talisman = 609;
 
-	public const int innocence = 418;
+	public const int negateBlind = 421;
 
 	public const int mod_scatter = 607;
 
-	public const int sustain_STR = 440;
+	public const int negateShockwave = 430;
 
 	public const int breathing = 429;
 
@@ -74,15 +74,15 @@ public class ENC
 
 	public const int negateParalysis = 422;
 
-	public const int negateBlind = 421;
-
 	public const int negatePoison = 420;
+
+	public const int innocence = 418;
 
 	public const int loving = 417;
 
 	public const int seeInvisible = 416;
 
-	public const int sustain_END = 441;
+	public const int sustain_STR = 440;
 
 	public const int invisibility = 415;
 
@@ -92,9 +92,9 @@ public class ENC
 
 	public const int throwReturn = 410;
 
-	public const int mod_splash = 608;
+	public const int corruption = 409;
 
-	public const int resWeather = 408;
+	public const int mod_splash = 608;
 
 	public const int travelSpeed = 407;
 
@@ -114,9 +114,9 @@ public class ENC
 
 	public const int encHit = 414;
 
-	public const int sustain_DEX = 442;
+	public const int sustain_END = 441;
 
-	public const int corruption = 409;
+	public const int resWeather = 408;
 
 	public const int mod_ammo = 600;
 
@@ -152,7 +152,7 @@ public class ENC
 
 	public const int strongStomach = 480;
 
-	public const int bane_machine = 465;
+	public const int bane_man = 464;
 
 	public const int sustain_PER = 443;
 
@@ -160,30 +160,32 @@ public class ENC
 
 	public const int sustain_WIL = 445;
 
-	public const int sustain_MAG = 446;
-
-	public const int bane_dragon = 460;
+	public const int bane_machine = 465;
 
 	public const int sustain_CHA = 447;
+
+	public const int sustain_MAG = 446;
+
+	public const int bane_undead = 461;
 
 	public const int bane_fairy = 462;
 
 	public const int bane_animal = 463;
 
-	public const int bane_man = 464;
+	public const int bane_dragon = 460;
 
-	public const int bane_undead = 461;
+	public const int sustain_DEX = 442;
 
-	public static readonly int[] IDS = new int[87]
+	public static readonly int[] IDS = new int[88]
 	{
 		653, 652, 651, 650, 641, 624, 621, 622, 623, 654,
 		640, 655, 851, 660, 661, 662, 663, 664, 665, 666,
-		850, 620, 865, 852, 656, 609, 418, 607, 440, 429,
-		428, 427, 426, 425, 424, 423, 422, 421, 420, 417,
-		416, 441, 415, 412, 411, 410, 608, 408, 407, 406,
-		405, 404, 403, 402, 401, 400, 414, 442, 409, 600,
+		850, 620, 865, 852, 656, 609, 421, 607, 430, 429,
+		428, 427, 426, 425, 424, 423, 422, 420, 418, 417,
+		416, 440, 415, 412, 411, 410, 409, 608, 407, 406,
+		405, 404, 403, 402, 401, 400, 414, 441, 408, 600,
 		606, 605, 604, 603, 602, 601, 486, 485, 484, 483,
-		482, 481, 468, 467, 466, 480, 465, 443, 444, 445,
-		446, 460, 447, 462, 463, 464, 461
+		482, 481, 468, 467, 466, 480, 464, 443, 444, 445,
+		465, 447, 446, 461, 462, 463, 460, 442
 	};
 }

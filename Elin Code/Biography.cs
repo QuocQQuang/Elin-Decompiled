@@ -462,21 +462,22 @@ public class Biography : EClass
 
 	public void SetPortrait(Chara c)
 	{
-		string id = c.id;
-		if (!(id == "shojo"))
+		switch (c.id)
 		{
-			if (id == "sister")
-			{
-				c.c_idPortrait = Portrait.GetRandomPortrait("special_f-littlesister");
-			}
-			else
-			{
-				c.c_idPortrait = Portrait.GetRandomPortrait(gender, c.GetIdPortraitCat());
-			}
-		}
-		else
-		{
+		case "shojo":
 			c.c_idPortrait = Portrait.GetRandomPortrait("special_f-littlegirl");
+			break;
+		case "sister":
+		case "sister_shark":
+		case "sister_penguin":
+			c.c_idPortrait = Portrait.GetRandomPortrait("special_f-littlesister");
+			break;
+		case "citizen_exile":
+			c.c_idPortrait = "special_n-exile";
+			break;
+		default:
+			c.c_idPortrait = Portrait.GetRandomPortrait(gender, c.GetIdPortraitCat());
+			break;
 		}
 	}
 
@@ -488,6 +489,11 @@ public class Biography : EClass
 	public string TextBio2(Chara c)
 	{
 		return Lang.Parse("heightWeight", height.ToString() ?? "", weight.ToString() ?? "") + " " + ((c.material.alias == "meat") ? "" : c.material.GetName().ToTitleCase(wholeText: true));
+	}
+
+	public string TextBioSlave(Chara c)
+	{
+		return " (" + Lang.GetList("genders_animal")[c.bio.gender] + " " + "age".lang(c.bio.TextAge(c)) + ")";
 	}
 
 	public string TextBirthDate(Chara c, bool _age = false)

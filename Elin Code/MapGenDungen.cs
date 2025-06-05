@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Dungen;
 using UnityEngine;
 
@@ -33,10 +34,23 @@ public class MapGenDungen : BaseMapGen
 			biome.exterior.floor.mat = MATERIAL.GetRandomMaterialFromCategory(zone.lv % 50 + 10, "rock", EClass.sources.materials.alias["granite"]).id;
 			biome.exterior.floor.matSub = MATERIAL.GetRandomMaterialFromCategory(zone.lv % 50 + 10, "rock", EClass.sources.materials.alias["granite"]).id;
 		}
+		if (biome.name == "Dungeon_Water")
+		{
+			int num = ((EClass.rnd(3) == 0) ? 187 : ((EClass.rnd(2) == 0) ? 188 : 189));
+			biome.exterior.block.id = (biome.interior.block.id = num);
+			if (num == 189)
+			{
+				biome.exterior.block.mat = (biome.interior.block.mat = (byte)EClass.sources.materials.rows.Where((SourceMaterial.Row r) => r.tag.Contains("coral")).RandomItem().id);
+			}
+			else
+			{
+				biome.exterior.block.mat = (biome.interior.block.mat = 3);
+			}
+		}
 		BiomeProfile.TileFloor floor = biome.exterior.floor;
 		BiomeProfile.TileBlock block = biome.exterior.block;
 		int idMat = -1;
-		if (zone is Zone_RandomDungeonNature && EClass.rndSeed(3, zone.uid) != 0)
+		if ((zone is Zone_RandomDungeonPlain || zone is Zone_RandomDungeonForest) && EClass.rndSeed(3, zone.uid) != 0)
 		{
 			block = EClass.core.refs.biomes.dict["Dungeon_Forest"].exterior.block;
 			if (zone is Zone_RandomDungeonPlain)
@@ -156,15 +170,15 @@ public class MapGenDungen : BaseMapGen
 		}
 		Dictionary<int, GenRoom> rooms = new Dictionary<int, GenRoom>();
 		int count = 0;
-		int num = 0;
+		int num2 = 0;
 		foreach (Dungen.Room room in mapData.rooms)
 		{
 			if (room.width != 0 && room.height != 0)
 			{
-				num++;
+				num2++;
 			}
 		}
-		if (num == 0)
+		if (num2 == 0)
 		{
 			mapData.rooms.Clear();
 		}
@@ -191,13 +205,13 @@ public class MapGenDungen : BaseMapGen
 		zone.OnGenerateRooms(this);
 		map.ReloadRoom();
 		Debug.Log("Dungen: room:" + rooms.Count + "/" + mapData.rooms.Count + " width:" + width + " height:" + height);
-		int num2 = EClass.rnd(Size * Size / 50 + EClass.rnd(20)) + 5;
-		num2 = num2 * Mathf.Min(20 + zone.DangerLv * 5, 100) / 100;
+		int num3 = EClass.rnd(Size * Size / 50 + EClass.rnd(20)) + 5;
+		num3 = num3 * Mathf.Min(20 + zone.DangerLv * 5, 100) / 100;
 		if (zone is Zone_RandomDungeonNature)
 		{
-			num2 /= 5;
+			num3 /= 5;
 		}
-		for (int k = 0; k < num2; k++)
+		for (int k = 0; k < num3; k++)
 		{
 			point = EClass._map.GetRandomPoint();
 			if (!point.cell.isModified && !point.HasThing && !point.HasBlock && !point.HasObj)
@@ -206,24 +220,37 @@ public class MapGenDungen : BaseMapGen
 				EClass._zone.AddCard(t3, point).Install();
 			}
 		}
-		if (zone is Zone_RandomDungeonPlain)
+		bool forest = zone is Zone_RandomDungeonForest;
+		if (zone is Zone_RandomDungeonPlain || (forest && EClass.rnd(3) == 0))
 		{
-			Crawler crawler = Crawler.Create("pasture");
-			int tries = 3;
-			crawler.CrawlUntil(EClass._map, () => EClass._map.GetRandomPoint(), tries, delegate(Crawler.Result r)
+			Crawler.Create("pasture").CrawlUntil(tries: EClass.debug.enable ? 3 : EClass.rnd(EClass.rnd(3) + 1), map: EClass._map, onStart: () => EClass._map.GetRandomPoint(), canComplete: delegate(Crawler.Result r)
 			{
-				int id = ((EClass.rnd(3) == 0) ? 108 : 105);
+				int num4 = ((forest || EClass.rnd(5) == 0) ? EClass.sources.objs.rows.Where((SourceObj.Row a) => a.ContainsTag("wild")).RandomItem().id : ((EClass.rnd(3) == 0) ? 108 : 105));
+				Thing thing5 = null;
+				int num5 = Mathf.Min(EClass._zone.DangerLv, EClass.pc.Evalue(286) * 2 / 3);
+				if (num5 > 0)
+				{
+					thing5 = TraitSeed.MakeSeed(EClass.sources.objs.map[num4]);
+					Rand.SetSeed(EClass._zone.uid * 10 + num5);
+					TraitSeed.LevelSeed(thing5, (thing5.trait as TraitSeed).row, num5);
+					Rand.SetSeed();
+					thing5.elements.SetBase(2, EClass.curve(thing5.encLV, 50, 10, 80));
+				}
 				foreach (Point point2 in r.points)
 				{
 					if (!point2.cell.isModified && !point2.HasThing && !point2.HasBlock && !point2.HasObj)
 					{
-						map.SetObj(point2.x, point2.z, id);
-						int num3 = 3;
+						map.SetObj(point2.x, point2.z, num4);
+						int num6 = 3;
 						if (EClass.rnd(6) == 0)
 						{
-							num3++;
+							num6++;
 						}
-						point2.growth.SetStage(num3);
+						point2.growth.SetStage(num6);
+						if (thing5 != null)
+						{
+							EClass._map.AddPlant(point2, thing5);
+						}
 					}
 				}
 				return false;

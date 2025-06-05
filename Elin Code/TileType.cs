@@ -18,6 +18,8 @@ public class TileType : EClass
 
 	public static TileTypeBlock Block = new TileTypeBlock();
 
+	public static TileTypeBlockOpen BlockOpen = new TileTypeBlockOpen();
+
 	public static TileTypeBlockShip BlockShip = new TileTypeBlockShip();
 
 	public static TileTypeSlope Slope = new TileTypeSlope();
@@ -43,6 +45,8 @@ public class TileType : EClass
 	public static TileTypeWall Wall = new TileTypeWall();
 
 	public static TileTypeWallOpen WallOpen = new TileTypeWallOpen();
+
+	public static TileTypeWallFake WallFake = new TileTypeWallFake();
 
 	public static TileTypeFence Fence = new TileTypeFence();
 
@@ -203,8 +207,6 @@ public class TileType : EClass
 	public virtual int MaxAltitude => 10;
 
 	public virtual bool AltitudeAsDir => false;
-
-	public virtual bool UseLowWallTiles => false;
 
 	public virtual bool UseMountHeight => false;
 

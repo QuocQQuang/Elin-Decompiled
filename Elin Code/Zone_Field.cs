@@ -44,7 +44,17 @@ public class Zone_Field : Zone
 
 	public override int DangerLvFix => base.Tile.source.dangerLv;
 
-	public override string IdBiome => EClass._map.config.idBiome.IsEmpty(base.Tile.source.idBiome.IsEmpty("Plain"));
+	public override string IdBiome
+	{
+		get
+		{
+			if (map != null)
+			{
+				return map.config.idBiome.IsEmpty(base.Tile.source.idBiome.IsEmpty("Plain"));
+			}
+			return "Plain";
+		}
+	}
 
 	public override float PrespawnRate => 1.2f;
 
@@ -93,6 +103,8 @@ public class Zone_Field : Zone
 			return "bfBeach";
 		}
 	}
+
+	public override bool IsUnderwater => IdBiome == "Undersea";
 
 	public override void OnGenerateMap()
 	{

@@ -447,6 +447,10 @@ public class AttackProcess : EClass
 		bool flag = CC.HasCondition<ConReload>();
 		bool flag2 = CC.HasElement(486) && CC.IsPCFactionOrMinion;
 		hit = CalcHit();
+		if (CC.id == "tsunami")
+		{
+			hit = true;
+		}
 		int num = GetRawDamage(dmgMulti, crit, maxRoll);
 		if (IsRanged && count >= numFireWithoutDamageLoss)
 		{
@@ -707,7 +711,7 @@ public class AttackProcess : EClass
 		{
 			return true;
 		}
-		if (TC.isChara && num3 > 0 && num3 * 2 + 15 > EClass.rnd(100) && !TC.isRestrained && TC.Chara.TryMoveFrom(CC.pos) == Card.MoveResult.Success)
+		if (TC.isChara && !TC.HasCondition<ConGravity>() && num3 > 0 && num3 * 2 + 15 > EClass.rnd(100) && !TC.isRestrained && TC.Chara.TryMoveFrom(CC.pos) == Card.MoveResult.Success)
 		{
 			TC.pos.PlayEffect("vanish");
 			TC.PlaySound("push", 1.5f);

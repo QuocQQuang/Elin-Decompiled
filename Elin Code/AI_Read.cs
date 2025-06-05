@@ -10,9 +10,9 @@ public class AI_Read : AIAct
 		{
 			if (target != null)
 			{
-				if (!(target.trait is TraitStoryBook))
+				if (!(target.trait is TraitStoryBook) && !(target.trait is TraitDeedRelocate))
 				{
-					return !(target.trait is TraitDeedRelocate);
+					return !(target.trait is TraitScrollMap);
 				}
 				return false;
 			}
@@ -41,6 +41,10 @@ public class AI_Read : AIAct
 			target.trait.OnRead(owner);
 			target.Thing?.Identify(chara.IsPCParty);
 			Success();
+			if (chara.IsPC)
+			{
+				EClass.player.EndTurn();
+			}
 		}
 	}
 

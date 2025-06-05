@@ -26,7 +26,6 @@ public class FoodEffect : EClass
 		{
 			int num6 = c.CountNumEaten(food);
 			bool flag6 = c.GetFavFood().id == food.id;
-			Debug.Log(c.Name + "/" + food.id + "/" + num6);
 			if (num6 < 2 || flag6)
 			{
 				if (num6 == 1 || flag6 || EClass.rnd(4) == 0)
@@ -225,19 +224,18 @@ public class FoodEffect : EClass
 				case "little":
 				{
 					int @int = c.GetInt(112);
-					if (@int >= 30)
+					if (@int < 30)
 					{
-						break;
-					}
-					c.Say("little_eat", c);
-					c.PlaySound("ding_potential");
-					int v = Mathf.Max(5 - @int / 2, 1);
-					Debug.Log("sister eaten:" + @int + "/" + v);
-					foreach (Element value3 in c.elements.dict.Values)
-					{
-						if (value3.IsMainAttribute)
+						c.Say("little_eat", c);
+						c.PlaySound("ding_potential");
+						int v = Mathf.Max(5 - @int / 2, 1);
+						Debug.Log("sister eaten:" + @int + "/" + v);
+						foreach (Element value3 in c.elements.dict.Values)
 						{
-							c.elements.ModPotential(value3.id, v);
+							if (value3.IsMainAttribute)
+							{
+								c.elements.ModPotential(value3.id, v);
+							}
 						}
 					}
 					if (c.race.id == "mutant" && c.elements.Base(1230) < 10)
@@ -420,6 +418,16 @@ public class FoodEffect : EClass
 					c.AddCondition<ConConfuse>(-value.Value * 10);
 					c.AddCondition<ConInsane>(-value.Value * 10);
 					c.AddCondition<ConHallucination>(-value.Value * 20);
+					break;
+				case 755:
+					c.AddCondition<ConBleed>(-value.Value * 10);
+					break;
+				case 756:
+					c.hygiene.Mod(-value.Value * 5);
+					break;
+				case 760:
+					c.RemoveCondition<ConAwakening>();
+					c.sleepiness.Mod(value.Value);
 					break;
 				case 761:
 					c.Say("recharge_stamina_negative", c);

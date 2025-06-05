@@ -119,6 +119,8 @@ public class Chara : Card, IPathfindWalker
 
 	public float idleTimer;
 
+	public bool isBerserk;
+
 	public bool isDrunk;
 
 	public bool isConfused;
@@ -142,6 +144,10 @@ public class Chara : Card, IPathfindWalker
 	public bool bossText;
 
 	public bool ignoreSPAbsorb;
+
+	public bool wasInWater;
+
+	public SpriteReplacer spriteReplacer;
 
 	private Faction _faction;
 
@@ -697,7 +703,7 @@ public class Chara : Card, IPathfindWalker
 
 	public override int MaxHP => (int)Mathf.Clamp(((long)(base.END * 2 + base.STR + base.WIL / 2) * (long)Mathf.Min(base.LV, 25) / 25 + base.END + 10) * Evalue(60) / 100 * ((IsPCFaction ? 100 : (100 + (int)base.rarity * 300)) + (IsPC ? (EClass.player.lastEmptyAlly * Evalue(1646)) : 0)) / 100, 1f, 100000000f);
 
-	public override int WeightLimit => (base.STR * 500 + base.END * 250 + Evalue(207) * 2000) * ((!HasElement(1411)) ? 1 : 5) + 45000;
+	public override int WeightLimit => Mathf.Max((base.STR * 500 + base.END * 250 + Evalue(207) * 2000) * ((!HasElement(1411)) ? 1 : 5) + 45000, 1000);
 
 	public override int SelfWeight => bio.weight * 1000;
 
@@ -770,6 +776,38 @@ public class Chara : Card, IPathfindWalker
 				}
 				return a;
 			}
+		}
+	}
+
+	public override SourcePref Pref
+	{
+		get
+		{
+			if (spriteReplacer != null)
+			{
+				return EClass.core.refs.prefs.replacer1;
+			}
+			if (base.idSkin > 0)
+			{
+				switch (sourceCard.tiles.TryGet(base.idSkin))
+				{
+				case 2319:
+				case 2619:
+				case 2621:
+				case 2623:
+				case 2625:
+					return EClass.core.refs.prefs.sonwputit1;
+				case 2320:
+				case 2611:
+				case 2620:
+				case 2622:
+				case 2624:
+				case 2626:
+				case 2828:
+					return EClass.core.refs.prefs.snowputit2;
+				}
+			}
+			return sourceCard.pref;
 		}
 	}
 
@@ -1417,7 +1455,7 @@ public class Chara : Card, IPathfindWalker
 		InitStats();
 		body.SetOwner(this);
 		hostility = OriginalHostility;
-		if (race.EQ.Length != 0)
+		if (race.EQ.Length != 0 || !source.equip.IsEmpty())
 		{
 			TryRestock(onCreate: true);
 		}
@@ -1651,6 +1689,7 @@ public class Chara : Card, IPathfindWalker
 		if (body.GetSlot(37, onlyEmpty: false)?.thing != null && HasElement(1209))
 		{
 			_Speed -= 25;
+			info?.AddText(-25, EClass.sources.elements.map[1209].GetName());
 		}
 		if (parasite != null)
 		{
@@ -1662,6 +1701,15 @@ public class Chara : Card, IPathfindWalker
 			info?.AddText("minSpeed".lang((elements.ValueWithoutLink(79) / 3).ToString() ?? ""));
 		}
 		int num = 100;
+		if (EClass._zone.map != null && EClass._zone.IsUnderwater)
+		{
+			int num2 = Evalue(200);
+			num = 50 + Mathf.Clamp((int)Mathf.Sqrt(num2) * 5 - EClass._zone.DangerLv / 50, 0, 50) + Mathf.Clamp((int)Mathf.Sqrt(num2), 0, 25);
+			if (info != null && num != 100)
+			{
+				info.AddFix(num - 100, EClass.sources.elements.map[200].GetName().ToTitleCase());
+			}
+		}
 		if (IsPCFaction)
 		{
 			switch (burden.GetPhase())
@@ -1738,6 +1786,10 @@ public class Chara : Card, IPathfindWalker
 			num -= 30;
 			info?.AddFix(-30, GetCondition<ConGravity>().Name);
 		}
+		if (_Speed < 10)
+		{
+			_Speed = 10;
+		}
 		_Speed = _Speed * num / 100;
 		if (_Speed < 10)
 		{
@@ -1809,7 +1861,7 @@ public class Chara : Card, IPathfindWalker
 		if (source == null)
 		{
 			Debug.LogWarning("Chara " + id + " not found");
-			id = "begger";
+			id = "chicken";
 			source = EClass.sources.charas.map[id];
 		}
 		path.walker = this;
@@ -2083,7 +2135,6 @@ public class Chara : Card, IPathfindWalker
 
 	public void ReleaseMinion()
 	{
-		Debug.Log("released:" + this);
 		base.c_uidMaster = 0;
 		master = null;
 		enemy = null;
@@ -2541,7 +2592,7 @@ public class Chara : Card, IPathfindWalker
 					}
 					if (!isDead && !HasElement(429))
 					{
-						ModExp(200, 8 + num4 * 12);
+						ModExp(200, 1 + num4 * 12);
 					}
 				}
 				EClass.player.regionMoveWarned = false;
@@ -2555,6 +2606,18 @@ public class Chara : Card, IPathfindWalker
 				num = EClass.setting.defaultActPace * 3f;
 			}
 			actTime = num;
+		}
+		if (IsPCFaction && EClass.rnd(5) == 0 && newPoint.cell.CanSuffocate())
+		{
+			ModExp(200, EClass._zone.IsRegion ? 50 : 5);
+			if (ride != null)
+			{
+				ride.ModExp(200, EClass._zone.IsRegion ? 50 : 5);
+			}
+			if (parasite != null)
+			{
+				parasite.ModExp(200, EClass._zone.IsRegion ? 50 : 5);
+			}
 		}
 		Chara chara = ((ride == null) ? this : ride);
 		if (!EClass._zone.IsRegion || chara.IsPC)
@@ -3438,7 +3501,7 @@ public class Chara : Card, IPathfindWalker
 			break;
 		}
 		}
-		if (turn % 500 == 0)
+		if (turn % 200 == 0)
 		{
 			DiminishTempElements();
 		}
@@ -3554,6 +3617,18 @@ public class Chara : Card, IPathfindWalker
 				{
 					return;
 				}
+			}
+		}
+		if (id == "tsunami")
+		{
+			if (elements.Base(79) < 30)
+			{
+				Die();
+				return;
+			}
+			if (IsInCombat)
+			{
+				elements.SetTo(79, elements.Base(79) * 3 / 4);
 			}
 		}
 		if (!preventRegen)
@@ -3814,7 +3889,7 @@ public class Chara : Card, IPathfindWalker
 			ai.Tick();
 		}
 		Cell cell2 = base.Cell;
-		if (cell2.IsTopWaterAndNoSnow && !cell2.isFloating)
+		if (EClass._zone.IsUnderwater || (cell2.IsTopWaterAndNoSnow && !cell2.isFloating))
 		{
 			AddCondition<ConWet>(50);
 			if (pos.IsHotSpring)
@@ -3822,7 +3897,7 @@ public class Chara : Card, IPathfindWalker
 				hygiene.Mod(2);
 			}
 		}
-		if (IsPC && !EClass._zone.IsRegion && cell2.CanSuffocate())
+		if (IsPC && !EClass._zone.IsRegion && cell2.CanSuffocate() && !EClass.debug.godMode)
 		{
 			AddCondition<ConSuffocation>(800 / (100 + EvalueMax(200, -5) * 10), force: true);
 		}
@@ -4833,9 +4908,16 @@ public class Chara : Card, IPathfindWalker
 			}
 			if (base.isSummon)
 			{
-				Say("summon_vanish", this);
-				pos.PlayEffect("vanish");
-				pos.PlaySound("vanish");
+				if (id == "tsunami")
+				{
+					pos.PlaySound("water");
+				}
+				else
+				{
+					Say("summon_vanish", this);
+					pos.PlayEffect("vanish");
+					pos.PlaySound("vanish");
+				}
 				Destroy();
 				return;
 			}
@@ -5691,25 +5773,33 @@ public class Chara : Card, IPathfindWalker
 		{
 			c.MakeEgg();
 		}
-		if (!headpat || this == c)
+		if (headpat && this != c)
 		{
-			return;
-		}
-		if (c.interest > 0)
-		{
-			c.ModAffinity(EClass.pc, 1 + EClass.rnd(3));
-			c.interest -= 20 + EClass.rnd(10);
-		}
-		if (faith != EClass.game.religions.MoonShadow || !c.IsPCParty)
-		{
-			return;
-		}
-		foreach (Chara member in party.members)
-		{
-			if (!member.IsPC && CanSeeLos(member))
+			if (c.interest > 0)
 			{
-				member.AddCondition<ConEuphoric>(100 + Evalue(6904) * 5);
+				c.ModAffinity(EClass.pc, 1 + EClass.rnd(3));
+				c.interest -= 20 + EClass.rnd(10);
 			}
+			if (faith == EClass.game.religions.MoonShadow && c.IsPCParty)
+			{
+				foreach (Chara member in party.members)
+				{
+					if (!member.IsPC && CanSeeLos(member))
+					{
+						member.AddCondition<ConEuphoric>(100 + Evalue(6904) * 5);
+					}
+				}
+			}
+		}
+		if (c.Evalue(1221) > 0)
+		{
+			int ele = ((c.MainElement == Element.Void) ? 924 : c.MainElement.id);
+			if (c.id == "hedgehog_ether")
+			{
+				ele = 922;
+			}
+			Say("reflect_thorne", c, this);
+			DamageHP(10, ele, Power, AttackSource.Condition);
 		}
 	}
 
@@ -6056,10 +6146,6 @@ public class Chara : Card, IPathfindWalker
 		{
 			base.idSkin = (EClass.core.config.game.antiSpider ? 1 : 0);
 		}
-		if (source.moveAnime == "hop")
-		{
-			charaRenderer.hopCurve = EClass.setting.render.anime.hop;
-		}
 		if (host != null)
 		{
 			charaRenderer.pccData = PCCData.Create("ride");
@@ -6108,6 +6194,10 @@ public class Chara : Card, IPathfindWalker
 			PCC pCC = PCC.Get(pccData);
 			pCC.Build();
 			return pCC.variation.idle[0, 0];
+		}
+		if (spriteReplacer != null)
+		{
+			return spriteReplacer.data.GetSprite();
 		}
 		return sourceCard.GetSprite(0, (sourceCard._tiles.Length > 1) ? ((base.idSkin != 0 || source.staticSkin) ? base.idSkin : (base.uid % sourceCard._tiles.Length / 2 * 2 + ((!base.IsMale) ? 1 : 0))) : 0);
 	}
@@ -6488,7 +6578,7 @@ public class Chara : Card, IPathfindWalker
 					questDebt.stage++;
 					if (questDebt.stage > 7)
 					{
-						questDebt.stage = 1;
+						questDebt.stage = 7;
 					}
 					ShowDialog("loytel", "debt" + questDebt.stage);
 					return;
@@ -7286,27 +7376,28 @@ public class Chara : Card, IPathfindWalker
 		{
 			a = a * num / 100;
 		}
+		if (show)
+		{
+			if (a == 0)
+			{
+				if (!showOnlyEmo)
+				{
+					Say("affinityNone", this, c);
+				}
+			}
+			else
+			{
+				ShowEmo((!flag) ? Emo.angry : Emo.love);
+				c.ShowEmo(flag ? Emo.love : Emo.sad);
+				if (!showOnlyEmo)
+				{
+					Say(flag ? "affinityPlus" : "affinityMinus", this, c);
+				}
+			}
+		}
 		if (c.IsPC)
 		{
 			a = affinity.Mod(a);
-		}
-		if (!show)
-		{
-			return;
-		}
-		if (a == 0)
-		{
-			if (!showOnlyEmo)
-			{
-				Say("affinityNone", this, c);
-			}
-			return;
-		}
-		ShowEmo((!flag) ? Emo.angry : Emo.love);
-		c.ShowEmo(flag ? Emo.love : Emo.sad);
-		if (!showOnlyEmo)
-		{
-			Say(flag ? "affinityPlus" : "affinityMinus", this, c);
 		}
 	}
 
@@ -7450,21 +7541,6 @@ public class Chara : Card, IPathfindWalker
 		return base.c_idPortrait;
 	}
 
-	public Thing GiveBirth(Thing t, bool effect)
-	{
-		EClass.player.forceTalk = true;
-		Talk("giveBirth");
-		EClass._zone.TryAddThing(t, pos);
-		if (effect)
-		{
-			PlayEffect("revive");
-			PlaySound("egg");
-			PlayAnime(AnimeID.Shiver);
-			AddCondition<ConDim>(200);
-		}
-		return t;
-	}
-
 	public Thing MakeGene(DNA.Type? type = null)
 	{
 		return DNA.GenerateGene(this, type);
@@ -7475,38 +7551,6 @@ public class Chara : Card, IPathfindWalker
 		return DNA.GenerateGene(this, DNA.Type.Brain);
 	}
 
-	public Thing MakeMilk(bool effect = true, int num = 1, bool addToZone = true)
-	{
-		Thing thing = ThingGen.Create("milk").SetNum(num);
-		thing.MakeRefFrom(this);
-		int num2 = base.LV - source.LV;
-		if (!IsPCFaction && EClass._zone.IsUserZone)
-		{
-			num2 = 0;
-		}
-		if (num2 >= 10)
-		{
-			thing.SetEncLv(num2 / 10);
-		}
-		if (!addToZone)
-		{
-			return thing;
-		}
-		return GiveBirth(thing, effect);
-	}
-
-	public Thing MakeEgg(bool effect = true, int num = 1, bool addToZone = true)
-	{
-		Thing thing = ThingGen.Create((EClass.rnd(EClass.debug.enable ? 1 : 20) == 0) ? "egg_fertilized" : "_egg").SetNum(num);
-		thing.MakeFoodFrom(this);
-		thing.c_idMainElement = base.c_idMainElement;
-		if (!addToZone)
-		{
-			return thing;
-		}
-		return GiveBirth(thing, effect);
-	}
-
 	public void OnInsulted()
 	{
 		if (!isDead)
@@ -7514,7 +7558,7 @@ public class Chara : Card, IPathfindWalker
 			if (HasElement(1231))
 			{
 				Talk("insulted");
-				AddCondition<ConEuphoric>();
+				AddCondition<ConEuphoric>(100 * Evalue(1231));
 			}
 			else if (EClass.rnd(20) == 0)
 			{
@@ -8633,6 +8677,10 @@ public class Chara : Card, IPathfindWalker
 		{
 			Refresh();
 		}
+		if (c.CancelAI)
+		{
+			ai.Cancel();
+		}
 		if (IsPC && c.ConsumeTurn && !EClass.pc.isRestrained)
 		{
 			EClass.player.EndTurn();
@@ -9111,6 +9159,43 @@ public class Chara : Card, IPathfindWalker
 		elements.CheckSkillActions();
 	}
 
+	public void SetMutation(int idEle, int a = 0)
+	{
+		SourceElement.Row row = EClass.sources.elements.map[idEle];
+		SourceElement.Row row2 = EClass.sources.elements.alias[row.aliasParent];
+		Element element = elements.GetElement(idEle);
+		Element element2 = elements.GetElement(row2.id);
+		int num = element?.Value ?? 0;
+		if (a < 0)
+		{
+			a = 0;
+		}
+		if (a > row.max)
+		{
+			a = row.max;
+		}
+		bool flag = (row.tag.Contains("neg") ? (a > num) : (a < num));
+		if (a == 0 && (element == null || element.Value == 0))
+		{
+			SayNothingHappans();
+			return;
+		}
+		if (element != null && element.Value == a)
+		{
+			SayNothingHappans();
+			return;
+		}
+		if (element2 != null && element2.Value > 0)
+		{
+			SetFeat(element2.id, 0);
+		}
+		SetFeat(idEle, a);
+		PlaySound("mutation");
+		PlayEffect("mutation");
+		Msg.SetColor(flag ? Msg.colors.MutateBad : Msg.colors.MutateGood);
+		Say(row.GetText(flag ? "textDec" : "textInc", returnNull: true) ?? row.alias, this);
+	}
+
 	public bool MutateRandom(int vec = 0, int tries = 100, bool ether = false, BlessedState state = BlessedState.Normal)
 	{
 		if (!ether && vec >= 0 && HasElement(406) && EClass.rnd(5) != 0)
@@ -9118,7 +9203,7 @@ public class Chara : Card, IPathfindWalker
 			Say("resistMutation", this);
 			return false;
 		}
-		IEnumerable<SourceElement.Row> ie = EClass.sources.elements.rows.Where((SourceElement.Row a) => a.category == (ether ? "ether" : "mutation"));
+		IEnumerable<SourceElement.Row> ie = EClass.sources.elements.rows.Where((SourceElement.Row a) => a.category == (ether ? "ether" : "mutation") && !a.tag.Contains("noRandomMutation"));
 		for (int i = 0; i < tries; i++)
 		{
 			SourceElement.Row row = ie.RandomItem();
@@ -9257,7 +9342,7 @@ public class Chara : Card, IPathfindWalker
 	{
 		if (_historyFood != null)
 		{
-			while (_historyFood.Count > 7)
+			while (_historyFood.Count > 5)
 			{
 				_historyFood.RemoveAt(_historyFood.Count - 1);
 			}
@@ -9282,7 +9367,10 @@ public class Chara : Card, IPathfindWalker
 				new List<string>()
 			};
 		}
-		_historyFood[0].Add(food.id);
+		if (_historyFood[0].Count < 5)
+		{
+			_historyFood[0].Add(food.id);
+		}
 	}
 
 	public int CountNumEaten(Thing food)
@@ -9357,26 +9445,40 @@ public class Chara : Card, IPathfindWalker
 		faithElements.SetParent(this);
 	}
 
-	public void ModTempElement(int ele, int a, bool naturalDecay = false)
+	public void ModTempElement(int ele, int a, bool naturalDecay = false, bool onlyRenew = false)
 	{
 		if (a < 0 && !naturalDecay && HasElement(EClass.sources.elements.alias["sustain_" + EClass.sources.elements.map[ele].alias]?.id ?? 0))
 		{
 			return;
 		}
+		bool flag = HasElement(1215);
 		if (tempElements == null)
 		{
 			tempElements = new ElementContainer();
 			tempElements.SetParent(this);
 		}
-		if (a > 0 && tempElements.Base(ele) > a)
+		if (a > 0 && flag)
 		{
-			a = a * 100 / (200 + (tempElements.Base(ele) - a) * 10);
+			a = a * 150 / 100;
 		}
-		int num = Mathf.Abs(elements.ValueWithoutLink(ele)) * 2 + 20;
-		int num2 = tempElements.Base(ele) + a;
-		if (num2 < -num || num2 > num || (a < 0 && num2 < -100))
+		int num = elements.ValueWithoutLink(ele);
+		int num2 = Mathf.Abs(num) + 100;
+		int num3 = num2 / (flag ? 2 : 4);
+		int num4 = -num - 100;
+		int num5 = tempElements.Base(ele);
+		int num6 = num5 + a;
+		if (onlyRenew)
 		{
-			a = 0;
+			num3 = Mathf.Min(a, num3);
+			num4 = Mathf.Max(a, -num2 / 3);
+		}
+		if (a > 0 && num6 > num3)
+		{
+			a = ((num3 > num5) ? (num3 - num5) : 0);
+		}
+		if (a < 0 && num6 < num4)
+		{
+			a = ((num4 < num5) ? (num4 - num5) : 0);
 		}
 		Element element = tempElements.ModBase(ele, a);
 		if (element.vBase == 0)
@@ -9389,38 +9491,38 @@ public class Chara : Card, IPathfindWalker
 		}
 	}
 
-	public void DamageTempElements(int p, bool body, bool mind)
+	public void DamageTempElements(int p, bool body, bool mind, bool onlyRenew = false)
 	{
 		if (body)
 		{
-			DamageTempElement(Element.List_Body.RandomItem(), p);
+			DamageTempElement(Element.List_Body.RandomItem(), p, onlyRenew);
 		}
 		if (mind)
 		{
-			DamageTempElement(Element.List_Mind.RandomItem(), p);
+			DamageTempElement(Element.List_Mind.RandomItem(), p, onlyRenew);
 		}
 	}
 
-	public void DamageTempElement(int ele, int p)
+	public void DamageTempElement(int ele, int p, bool onlyRenew = false)
 	{
-		ModTempElement(ele, -(p / 100 + EClass.rnd(p / 100 + 1) + 1));
+		ModTempElement(ele, onlyRenew ? (-p / 20) : (-(p / 100 + EClass.rnd(p / 100 + 1) + 1)), naturalDecay: false, onlyRenew);
 	}
 
-	public void EnhanceTempElements(int p, bool body, bool mind)
+	public void EnhanceTempElements(int p, bool body, bool mind, bool onlyRenew = false)
 	{
 		if (body)
 		{
-			EnhanceTempElement(Element.List_Body.RandomItem(), p);
+			EnhanceTempElement(Element.List_Body.RandomItem(), p, onlyRenew);
 		}
 		if (mind)
 		{
-			EnhanceTempElement(Element.List_Mind.RandomItem(), p);
+			EnhanceTempElement(Element.List_Mind.RandomItem(), p, onlyRenew);
 		}
 	}
 
-	public void EnhanceTempElement(int ele, int p)
+	public void EnhanceTempElement(int ele, int p, bool onlyRenew = false)
 	{
-		ModTempElement(ele, p / 100 + EClass.rnd(p / 100 + 1));
+		ModTempElement(ele, onlyRenew ? (p / 20) : (p / 100 + EClass.rnd(p / 100 + 1)), naturalDecay: false, onlyRenew);
 	}
 
 	public void DiminishTempElements(int a = 1)

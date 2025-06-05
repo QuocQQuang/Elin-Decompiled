@@ -445,6 +445,7 @@ public class CoreDebug : EScriptable
 			{
 				thing.AddCard(ThingGen.Create("mathammer", MATERIAL.GetRandomMaterial(100).alias)).SetNum(10);
 			}
+			thing.AddCard(ThingGen.Create("mathammer", 103)).SetNum(10);
 			thing.AddCard(ThingGen.Create("mathammer", 102)).SetNum(10);
 			thing.AddCard(ThingGen.Create("mathammer", 33)).SetNum(10);
 			thing.AddCard(ThingGen.Create("mathammer", 18)).SetNum(10);
@@ -993,6 +994,13 @@ public class CoreDebug : EScriptable
 			foreach (Chara member in EClass.pc.party.members)
 			{
 				member.InstantEat();
+				if (!member.IsPC)
+				{
+					string id = "test";
+					member.spriteReplacer = new SpriteReplacer();
+					member.spriteReplacer.HasSprite(id);
+					member._CreateRenderer();
+				}
 			}
 			for (int j = 0; j < 10; j++)
 			{
@@ -1022,9 +1030,9 @@ public class CoreDebug : EScriptable
 		{
 			EClass.core.WaitForEndOfFrame(delegate
 			{
-				string id = (Input.GetKey(KeyCode.LeftControl) ? "quick3" : (Input.GetKey(KeyCode.LeftShift) ? "quick2" : "quick"));
+				string id2 = (Input.GetKey(KeyCode.LeftControl) ? "quick3" : (Input.GetKey(KeyCode.LeftShift) ? "quick2" : "quick"));
 				EClass.scene.Init(Scene.Mode.None);
-				Game.Load(id, cloud: false);
+				Game.Load(id2, cloud: false);
 			});
 		}
 		if (Input.GetKeyDown(KeyCode.F7))
@@ -1639,6 +1647,16 @@ public class CoreDebug : EScriptable
 				}
 			});
 		});
+		Add(cat2, "Reset Certain obj materials", delegate
+		{
+			EClass._map.ForeachCell(delegate(Cell c)
+			{
+				if (c.HasObj && c.obj == 79)
+				{
+					c.objMat = (byte)c.sourceObj.DefaultMaterial.id;
+				}
+			});
+		});
 		Add(cat2, "Fix Floors under Blocks", delegate
 		{
 			EClass._map.ForeachCell(delegate(Cell c)
@@ -1918,6 +1936,19 @@ public class CoreDebug : EScriptable
 			return "Demitas Removed!";
 		}
 		return "Not enough Demitas!";
+	}
+
+	[ConsoleCommand("")]
+	public static string Fix_RemoveDesignations()
+	{
+		EClass._map.ForeachCell(delegate(Cell c)
+		{
+			if (c.detail != null && c.detail.designation != null)
+			{
+				c.detail.designation.taskList.Remove(c.detail.designation);
+			}
+		});
+		return "Done.";
 	}
 
 	[ConsoleCommand("")]

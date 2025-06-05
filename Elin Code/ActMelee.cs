@@ -90,7 +90,10 @@ public class ActMelee : ActBaseAttack
 
 	public override bool Perform()
 	{
-		return Attack();
+		Act.CurrentAct = this;
+		bool result = Attack();
+		Act.CurrentAct = null;
+		return result;
 	}
 
 	public bool Attack(float dmgMulti = 1f, bool maxRoll = false)
@@ -112,6 +115,7 @@ public class ActMelee : ActBaseAttack
 		{
 			Act.TC = c;
 		});
+		Act.TP.Set(Act.TC.pos);
 		CellEffect effect = Act.TP.cell.effect;
 		if (effect != null && effect.id == 6 && EClass.rnd(2) == 0)
 		{
@@ -158,6 +162,7 @@ public class ActMelee : ActBaseAttack
 			int flurry;
 			int frustration;
 			int feint;
+			int knockback;
 			int mod_talisman;
 			if (Act.TC != null && Act.TC.IsAliveInCurrentZone)
 			{
@@ -181,6 +186,7 @@ public class ActMelee : ActBaseAttack
 					frustration = GetWeaponEnc(624, addSelfEnc: true);
 					int num3 = GetWeaponEnc(622, addSelfEnc: true);
 					feint = GetWeaponEnc(623, addSelfEnc: true);
+					knockback = GetWeaponEnc(603, addSelfEnc: true);
 					mod_talisman = GetWeaponEnc(609, addSelfEnc: true);
 					List<Point> list = EClass._map.ListPointsInLine(Act.CC.pos, Act.TC.pos, num2 / 10 + ((num2 % 10 > EClass.rnd(10)) ? 1 : 0) + 1);
 					if (w != null)
@@ -279,6 +285,14 @@ public class ActMelee : ActBaseAttack
 				bool flag = false;
 				for (int m = 0; m < num6; m++)
 				{
+					if (!Act.CC.IsAliveInCurrentZone)
+					{
+						break;
+					}
+					if (!Act.TC.IsAliveInCurrentZone)
+					{
+						break;
+					}
 					if (m > 0)
 					{
 						Act.CC.Say("attack_chaser");
@@ -361,7 +375,7 @@ public class ActMelee : ActBaseAttack
 						}
 						foreach (Card item4 in p.ListCards())
 						{
-							if (item4.trait.CanBeAttacked || (item4.isChara && item4.Chara.IsHostile(Act.CC)))
+							if ((item4.trait.CanBeAttacked || (item4.isChara && item4.Chara.IsHostile(Act.CC))) && !item4.HasElement(430))
 							{
 								int rawDamage = AttackProcess.Current.GetRawDamage(0.1f + 0.05f * Mathf.Sqrt(splash), crit: false, maxRoll: false);
 								rawDamage = item4.ApplyProtection(rawDamage);
@@ -369,6 +383,34 @@ public class ActMelee : ActBaseAttack
 							}
 						}
 					});
+				}
+				if (Act.TC.isChara && !Act.TC.HasCondition<ConGravity>() && Act.TC.ExistsOnMap && knockback > 0 && knockback * 2 + 15 > EClass.rnd(100) && !Act.TC.isRestrained)
+				{
+					Card.MoveResult num7 = Act.TC.Chara.TryMoveFrom(Act.CC.pos);
+					bool flag3 = Act.CC.id == "tsunami";
+					if (num7 == Card.MoveResult.Success)
+					{
+						Act.TC.renderer.SetFirst(first: true);
+						Act.TC.PlaySound("wave_hit_small");
+						if (flag3)
+						{
+							Act.TC.Chara.AddCondition<ConParalyze>(20, force: true);
+							Act.TC.Chara.AddCondition<ConSuffocation>(100, force: true);
+						}
+					}
+					else if (flag3)
+					{
+						Act.TC.PlaySound("wave_hit");
+						Act.TC.pos.PlayEffect("wave_hit");
+						Act.TC.Chara.AddCondition<ConSuffocation>(200, force: true);
+						if (!Act.TC.HasElement(430))
+						{
+							int rawDamage2 = AttackProcess.Current.GetRawDamage(1f, crit: false, maxRoll: false);
+							rawDamage2 = Act.TC.ApplyProtection(rawDamage2);
+							Act.TC.DamageHP(rawDamage2, 0, 100, AttackSource.Shockwave, Act.CC);
+						}
+						Act.CC.Die();
+					}
 				}
 			}
 			void AttackWithFlurry(Card _tc, Point _tp, float mtp, bool subAttack)

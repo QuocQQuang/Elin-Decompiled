@@ -364,7 +364,7 @@ public class EloMap : EClass
 			{
 				for (int j = gx - radius; j < gx + radius + 1; j++)
 				{
-					if (!CanBuildSite(j, i))
+					if (!CanBuildSite(j, i, 0, type))
 					{
 						return false;
 					}
@@ -378,8 +378,19 @@ public class EloMap : EClass
 			return false;
 		}
 		SourceGlobalTile.Row row = GetSources(gx, gy).LastItem();
-		if (type == ElomapSiteType.Mob)
+		if (row == null)
 		{
+			return false;
+		}
+		switch (type)
+		{
+		case ElomapSiteType.NefiaWater:
+			if (row.id != 4)
+			{
+				return false;
+			}
+			break;
+		case ElomapSiteType.Mob:
 			if (row.id == 4 && EClass.rnd(5) == 0)
 			{
 				return false;
@@ -388,9 +399,8 @@ public class EloMap : EClass
 			{
 				return false;
 			}
-		}
-		else
-		{
+			break;
+		default:
 			if (row == null || !row.tag.Contains("site"))
 			{
 				return false;
@@ -399,8 +409,27 @@ public class EloMap : EClass
 			{
 				return false;
 			}
+			break;
 		}
 		return true;
+	}
+
+	public bool IsWater(int gx, int gy)
+	{
+		if (GetCell(gx, gy) == null)
+		{
+			return false;
+		}
+		SourceGlobalTile.Row row = GetSources(gx, gy).LastItem();
+		if (row != null)
+		{
+			if (row.id != 4)
+			{
+				return row.id == 15;
+			}
+			return true;
+		}
+		return false;
 	}
 
 	public bool IsSnow(int gx, int gy)

@@ -261,6 +261,8 @@ public class Zone : Spatial, ICardParent, IInspect
 
 	public virtual bool IsSkyLevel => base.lv > 0;
 
+	public virtual bool IsUnderwater => false;
+
 	public virtual bool IsUserZone => false;
 
 	public virtual bool CanDigUnderground => false;
@@ -719,15 +721,23 @@ public class Zone : Spatial, ICardParent, IInspect
 					}
 					map.things.ForeachReverse(delegate(Thing t)
 					{
-						if (t.trait is TraitNewZone)
+						if (t.trait is TraitNewZone || t.trait is TraitPowerStatue)
 						{
 							foreach (Thing thing in orgMap.things)
 							{
 								if (t.id == thing.id && t.pos.Equals(thing.pos))
 								{
-									RemoveCard(t);
-									map.things.Insert(0, thing);
-									thing.stackOrder = 0;
+									if (t.trait is TraitNewZone)
+									{
+										RemoveCard(t);
+										map.things.Insert(0, thing);
+										thing.stackOrder = 0;
+									}
+									else
+									{
+										t.ChangeMaterial(thing.material);
+										t.isOn = thing.isOn;
+									}
 									break;
 								}
 							}
@@ -915,6 +925,7 @@ public class Zone : Spatial, ICardParent, IInspect
 			if (card.isChara)
 			{
 				Chara chara = card.Chara;
+				chara.dirtySpeed = true;
 				if (!card.isDyed && card.HasTag(CTAG.random_color))
 				{
 					card.DyeRandom();
@@ -1168,7 +1179,8 @@ public class Zone : Spatial, ICardParent, IInspect
 				}
 			}
 		}
-		if (HourSinceLastActive <= 1)
+		Debug.Log("Last Active:" + base.lastActive);
+		if (base.lastActive == 0 || HourSinceLastActive <= 1 || IsRegion)
 		{
 			return;
 		}
@@ -2283,40 +2295,103 @@ public class Zone : Spatial, ICardParent, IInspect
 			bp.GenerateMap(this);
 		}
 		map.SetZone(this);
-		if (this is Zone_Field zone_Field)
+		Zone_Field zone_Field = this as Zone_Field;
+		if (IdBiome == "Sand" || IdBiome == "Water" || IsUnderwater)
+		{
+			int num = 1 + EClass.rnd((IdBiome == "Water") ? 3 : 2);
+			for (int i = 0; i < num; i++)
+			{
+				Point randomSurface = EClass._map.bounds.GetRandomSurface(centered: false, walkable: true, allowWater: true);
+				if (!randomSurface.HasObj && !randomSurface.HasThing)
+				{
+					Thing t = ThingGen.Create("pearl_oyster", new string[3] { "wood_birch", "poplar", "coralwood" }.RandomItem(), ContentLv);
+					EClass._zone.AddCard(t, randomSurface).Install();
+				}
+			}
+			num = 4 + EClass.rnd(5);
+			for (int j = 0; j < num; j++)
+			{
+				Point randomSurface2 = EClass._map.bounds.GetRandomSurface(centered: false, walkable: true, allowWater: true);
+				if (!randomSurface2.HasObj && !randomSurface2.HasThing && (IsUnderwater || randomSurface2.cell.IsTopWaterAndNoSnow || EClass.rnd(6) == 0))
+				{
+					EClass._zone.AddCard(ThingGen.Create("70", -1, ContentLv), randomSurface2);
+				}
+			}
+		}
+		if (IsUnderwater)
+		{
+			for (int k = 0; k < 30 + EClass.rnd(30); k++)
+			{
+				SpawnMob(null, SpawnSetting.Fish());
+			}
+			Crawler crawler = Crawler.Create("pasture");
+			int num2 = (EClass.debug.enable ? 3 : EClass.rnd(EClass.rnd(EClass.rnd(EClass.rnd(5) + 1) + 1) + 1));
+			bool flag = this is Zone_Field;
+			Thing seed = null;
+			if (IsNefia)
+			{
+				int num3 = Mathf.Min(EClass._zone.DangerLv, EClass.pc.Evalue(286) * 2 / 3);
+				if (num3 > 0)
+				{
+					seed = TraitSeed.MakeSeed(EClass.sources.objs.map[137]);
+					Rand.SetSeed(EClass._zone.uid * 10 + num3);
+					TraitSeed.LevelSeed(seed, (seed.trait as TraitSeed).row, num3);
+					Rand.SetSeed();
+					seed.elements.SetBase(2, EClass.curve(seed.encLV, 50, 10, 80));
+				}
+			}
+			crawler.CrawlUntil(EClass._map, () => EClass._map.GetRandomPoint(), num2 + (flag ? 4 : 0), delegate(Crawler.Result r)
+			{
+				int num4 = 137;
+				foreach (Point point in r.points)
+				{
+					if (!point.cell.isModified && !point.HasThing && !point.HasBlock && !point.HasObj)
+					{
+						map.SetObj(point.x, point.z, num4);
+						int idx = 3 + ((EClass.rnd(3) == 0) ? 1 : 0) + ((EClass.rnd(3) == 0) ? (-1) : 0) + ((EClass.rnd(3) == 0) ? (-1) : 0);
+						point.growth.SetStage(idx);
+						if (seed != null)
+						{
+							EClass._map.AddPlant(point, seed);
+						}
+					}
+				}
+				return false;
+			});
+			crawler.CrawlUntil(tries: EClass.rnd(EClass.rnd(5) + 1) + 1 + (flag ? 20 : 0), map: EClass._map, onStart: () => EClass._map.GetRandomPoint(), canComplete: delegate(Crawler.Result r)
+			{
+				int num5 = 136;
+				foreach (Point point2 in r.points)
+				{
+					if (!point2.cell.isModified && !point2.HasThing && !point2.HasBlock && !point2.HasObj)
+					{
+						map.SetObj(point2.x, point2.z, num5, 1, EClass.rnd(4));
+					}
+				}
+				return false;
+			});
+			crawler.CrawlUntil(tries: EClass.rnd(EClass.rnd(10) + 1) + 3 + (flag ? 40 : 0), map: EClass._map, onStart: () => EClass._map.GetRandomPoint(), canComplete: delegate(Crawler.Result r)
+			{
+				int idFloor = 121;
+				foreach (Point point3 in r.points)
+				{
+					map.SetFloor(point3.x, point3.z, 97, idFloor, Mathf.Clamp(4 - r.startPos.Distance(point3) + EClass.rnd(3) - EClass.rnd(3), 0, 3));
+				}
+				return false;
+			});
+		}
+		if (zone_Field != null)
 		{
 			if (EClass.rnd(3) == 0)
 			{
-				int num = EClass.rnd(2);
-				for (int i = 0; i < num; i++)
+				int num6 = EClass.rnd(2);
+				for (int l = 0; l < num6; l++)
 				{
-					Point randomSurface = EClass._map.bounds.GetRandomSurface();
-					if (!randomSurface.HasObj)
+					Point randomSurface3 = EClass._map.bounds.GetRandomSurface();
+					if (!randomSurface3.HasObj && !randomSurface3.HasThing)
 					{
-						Card t = ThingGen.Create("chest3").ChangeMaterial(biome.style.matDoor);
-						EClass._zone.AddCard(t, randomSurface).Install();
-					}
-				}
-			}
-			if (zone_Field.IdBiome == "Sand" || zone_Field.IdBiome == "Water")
-			{
-				int num2 = 1 + EClass.rnd((zone_Field.IdBiome == "water") ? 4 : 2);
-				for (int j = 0; j < num2; j++)
-				{
-					Point randomSurface2 = EClass._map.bounds.GetRandomSurface(centered: false, walkable: true, allowWater: true);
-					if (!randomSurface2.HasObj)
-					{
-						Thing t2 = ThingGen.Create("pearl_oyster", new string[3] { "wood_birch", "poplar", "coralwood" }.RandomItem());
-						EClass._zone.AddCard(t2, randomSurface2).Install();
-					}
-				}
-				num2 = 4 + EClass.rnd(5);
-				for (int k = 0; k < num2; k++)
-				{
-					Point randomSurface3 = EClass._map.bounds.GetRandomSurface(centered: false, walkable: true, allowWater: true);
-					if (!randomSurface3.HasObj && (randomSurface3.cell.IsTopWaterAndNoSnow || EClass.rnd(6) == 0))
-					{
-						EClass._zone.AddCard(ThingGen.Create("70"), randomSurface3);
+						Card t2 = ThingGen.Create("chest3").ChangeMaterial(biome.style.matDoor);
+						EClass._zone.AddCard(t2, randomSurface3).Install();
 					}
 				}
 			}
@@ -2581,6 +2656,10 @@ public class Zone : Spatial, ICardParent, IInspect
 			}
 		}
 		BiomeProfile biome = pos.cell.biome;
+		if (IsUnderwater && EClass.rnd(15) != 0)
+		{
+			biome = ((EClass.rnd(4) != 0) ? EClass.core.refs.biomes.Water : EClass.core.refs.biomes.Sand);
+		}
 		SpawnList spawnList = null;
 		spawnList = ((setting.idSpawnList != null) ? SpawnList.Get(setting.idSpawnList) : ((EClass._zone is Zone_DungeonYeek) ? SpawnListChara.Get("dungeon_yeek", (SourceChara.Row r) => r.race == "yeek") : ((setting.hostility == SpawnHostility.Neutral || (setting.hostility != SpawnHostility.Enemy && Rand.Range(0f, 1f) < ChanceSpawnNeutral)) ? SpawnList.Get("c_neutral") : ((biome.spawn.chara.Count <= 0) ? SpawnList.Get(biome.name, "chara", new CharaFilter
 		{

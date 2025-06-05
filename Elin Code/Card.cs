@@ -402,6 +402,18 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		}
 	}
 
+	public int version
+	{
+		get
+		{
+			return _ints[29];
+		}
+		set
+		{
+			_ints[29] = value;
+		}
+	}
+
 	public bool isCensored
 	{
 		get
@@ -1429,6 +1441,18 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		}
 	}
 
+	public int c_daysWithPC
+	{
+		get
+		{
+			return GetInt(67);
+		}
+		set
+		{
+			SetInt(67, value);
+		}
+	}
+
 	public string c_idPortrait
 	{
 		get
@@ -1486,6 +1510,18 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		set
 		{
 			SetStr(8, value);
+		}
+	}
+
+	public string c_idSpriteReplacer
+	{
+		get
+		{
+			return GetStr(13);
+		}
+		set
+		{
+			SetStr(13, value);
 		}
 	}
 
@@ -2580,6 +2616,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		_ints[0] = _bits1.ToInt();
 		_ints[2] = _bits2.ToInt();
 		_placeState = placeState;
+		version = 1;
 		OnSerializing();
 	}
 
@@ -2783,6 +2820,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 
 	public Card SetLv(int a)
 	{
+		bool flag = a > LV;
 		LV = a;
 		if (!isChara)
 		{
@@ -2804,6 +2842,10 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 					elements.ModBase(value.id, num2);
 				}
 			}
+		}
+		if (flag && elements.Base(286) > 50)
+		{
+			elements.SetTo(286, 50 + (int)Mathf.Sqrt(elements.Base(286) - 50));
 		}
 		Rand.SetSeed();
 		hp = MaxHP;
@@ -2863,7 +2905,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		}
 		if (Chara.race.id == "mutant")
 		{
-			int num = Mathf.Min(1 + LV / 5, 22);
+			int num = Mathf.Min(1 + LV / 5, 20);
 			for (int i = 0; i < num; i++)
 			{
 				if (Evalue(1644) < i + 1)
@@ -3472,6 +3514,34 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 				}
 			}
 		}
+		string encSlot = row.encSlot;
+		if (encSlot == null || encSlot.Length != 0)
+		{
+			switch (encSlot)
+			{
+			default:
+			{
+				bool flag = false;
+				string[] array = row.encSlot.Split(',');
+				foreach (string key in array)
+				{
+					if (EClass.sources.elements.alias[key].id == category.slot)
+					{
+						flag = true;
+					}
+				}
+				if (!flag)
+				{
+					return false;
+				}
+				break;
+			}
+			case "global":
+			case "all":
+			case "weapon":
+				break;
+			}
+		}
 		return CountRune() < MaxRune();
 	}
 
@@ -3881,6 +3951,10 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			{
 				dmg = dmg * (100 - (int)Mathf.Min(80f, Mathf.Sqrt(LV - 50) * 2.5f)) / 100;
 			}
+			if (origin != null && origin.HasCondition<ConBerserk>())
+			{
+				dmg = dmg * 3 / 2;
+			}
 			if (EClass.game.principal.enableDamageReduction && IsPCFaction)
 			{
 				int num2 = ((origin != null) ? origin.LV : EClass._zone.DangerLv);
@@ -4081,7 +4155,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 						if (EClass.player.invlunerable)
 						{
 							EvadeDeath();
-							goto IL_0baa;
+							goto IL_0bcf;
 						}
 					}
 					if (IsPC && Evalue(1220) > 0 && Chara.stamina.value >= Chara.stamina.max / 2)
@@ -4093,8 +4167,8 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 				}
 			}
 		}
-		goto IL_0baa;
-		IL_0baa:
+		goto IL_0bcf;
+		IL_0bcf:
 		if (trait.CanBeAttacked)
 		{
 			renderer.PlayAnime(AnimeID.HitObj);
@@ -4182,6 +4256,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 					{
 						EClass.pc.hp = 0;
 						Heal();
+						EClass.player.ModFame(-10 - (int)((float)EClass.player.fame * 0.05f));
 						target.ShowDialog("_chara", "bout_lose");
 						return;
 					}
@@ -4788,6 +4863,10 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			{
 				num3 += (int)Mathf.Min(Mathf.Sqrt(EClass.pc.Evalue(290)), 20f);
 			}
+			if (EClass.rnd((Act.CurrentAct is ActMeleeBladeStorm || (origin != null && (origin.HasElement(1556) || origin.HasCondition<ConTransmuteCat>()))) ? 2 : 100) == 0)
+			{
+				text = "dattamono";
+			}
 			if (num2 && num3 > EClass.rnd(100))
 			{
 				text = "meat_marble";
@@ -4864,6 +4943,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 						list.Add(ThingGen.Create("crystal_earth"));
 					}
 					break;
+				case "golem_fish":
 				case "golem_stone":
 					if (chance(30))
 					{
@@ -5093,6 +5173,10 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 	{
 		MakeRefFrom(c);
 		ChangeMaterial(c.material);
+		if (!c.isChara)
+		{
+			return this;
+		}
 		SourceRace.Row race = c.Chara.race;
 		int num = race.food[0].ToInt();
 		bool flag = id == "meat_marble";
@@ -5288,6 +5372,65 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		c_extraNameRef = (c1.IsPC ? EClass.pc.c_altName : c1.c_extraNameRef);
 	}
 
+	public Thing MakeEgg(bool effect = true, int num = 1, bool addToZone = true, int fertChance = 20, BlessedState? state = null)
+	{
+		Thing thing = ThingGen.Create((EClass.rnd(EClass.debug.enable ? 1 : fertChance) == 0) ? "egg_fertilized" : "_egg").SetNum(num);
+		thing.MakeFoodFrom(this);
+		thing.c_idMainElement = c_idMainElement;
+		if (state.HasValue)
+		{
+			thing.SetBlessedState(state.Value);
+		}
+		if (!addToZone)
+		{
+			return thing;
+		}
+		return GiveBirth(thing, effect);
+	}
+
+	public Thing MakeMilk(bool effect = true, int num = 1, bool addToZone = true, BlessedState? state = null)
+	{
+		Thing thing = ThingGen.Create("milk").SetNum(num);
+		thing.MakeRefFrom(this);
+		if (state.HasValue)
+		{
+			thing.SetBlessedState(state.Value);
+		}
+		int num2 = LV - sourceCard.LV;
+		if (!IsPCFaction && EClass._zone.IsUserZone)
+		{
+			num2 = 0;
+		}
+		if (num2 >= 10)
+		{
+			thing.SetEncLv(num2 / 10);
+		}
+		if (!addToZone)
+		{
+			return thing;
+		}
+		return GiveBirth(thing, effect);
+	}
+
+	public Thing GiveBirth(Thing t, bool effect)
+	{
+		Card card = (ExistsOnMap ? this : (GetRootCard() ?? EClass.pc));
+		EClass.player.forceTalk = true;
+		card.Talk("giveBirth");
+		EClass._zone.TryAddThing(t, card.pos);
+		if (effect)
+		{
+			card.pos.PlayEffect("revive");
+			card.pos.PlaySound("egg");
+			PlayAnime(AnimeID.Shiver);
+			if (isChara)
+			{
+				Chara.AddCondition<ConDim>(200);
+			}
+		}
+		return t;
+	}
+
 	public Card SetHidden(bool hide = true)
 	{
 		isHidden = hide;
@@ -5407,6 +5550,19 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		return elements.GetElement(ele)?.IsGlobalElement ?? false;
 	}
 
+	public bool HasElementNoCopy()
+	{
+		if (HasElement(759))
+		{
+			return true;
+		}
+		if (HasElement(703))
+		{
+			return true;
+		}
+		return false;
+	}
+
 	public virtual CardRenderer _CreateRenderer()
 	{
 		renderer = new CardRenderer();
@@ -5476,7 +5632,14 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		}
 		else if (isDyed)
 		{
-			_colorInt = BaseTileMap.GetColorInt(ref DyeMat.matColor, sourceRenderCard.colorMod);
+			if (sourceRenderCard.useAltColor)
+			{
+				_colorInt = BaseTileMap.GetColorInt(ref DyeMat.altColor, sourceRenderCard.colorMod);
+			}
+			else
+			{
+				_colorInt = BaseTileMap.GetColorInt(ref DyeMat.matColor, sourceRenderCard.colorMod);
+			}
 		}
 		else if (sourceRenderCard.useRandomColor)
 		{
@@ -5535,7 +5698,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 
 	public void SetImage(Image image, int dir, int idSkin = 0)
 	{
-		sourceRenderCard.SetImage(image, GetSprite(dir), colorInt, setNativeSize: true, dir, idSkin);
+		sourceRenderCard.SetImage(image, GetSprite(dir), colorInt, setNativeSize: true, dir, idSkin, this);
 	}
 
 	public virtual void SetImage(Image image)
@@ -5546,7 +5709,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 		}
 		else
 		{
-			sourceRenderCard.SetImage(image, GetSprite(), colorInt);
+			sourceRenderCard.SetImage(image, GetSprite(), colorInt, setNativeSize: true, 0, 0, this);
 		}
 	}
 
@@ -6322,6 +6485,10 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 				text2 = text.Replace("{", "").Replace("}", "");
 			}
 		}
+		if (c != null)
+		{
+			text2 = text2.Replace("#me", c.NameSimple);
+		}
 		if (!stripPun || !Lang.setting.stripPuns)
 		{
 			return text2;
@@ -6342,21 +6509,25 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 	{
 		MOD.tones.Initialize();
 		List<Dictionary<string, string>> list = MOD.tones.list;
-		if (list.Count == 0)
+		if (list.Count != 0)
 		{
-			return;
-		}
-		string text = list.RandomItem()["id"];
-		for (int i = 0; i < 10; i++)
-		{
-			Dictionary<string, string> dictionary = list.RandomItem();
-			if (EClass.rnd(100) <= dictionary["chance"].ToInt())
+			int mtp = EClass.core.config.test.extraToneMTP switch
 			{
-				text = dictionary["id"];
-				break;
+				4 => 10, 
+				3 => 5, 
+				2 => 2, 
+				1 => 1, 
+				0 => 0, 
+				_ => 0, 
+			};
+			if (EClass.debug.enable)
+			{
+				mtp *= 100;
 			}
+			string text = list.RandomItem()["id"];
+			text = list.RandomItemWeighted((Dictionary<string, string> a) => a["chance"].ToInt() * ((!a["tag"].Contains("meta")) ? 1 : mtp))["id"];
+			c_idTone = MOD.tones.GetToneID(text, bio?.gender ?? 0);
 		}
-		c_idTone = MOD.tones.GetToneID(text, bio?.gender ?? 0);
 	}
 
 	public bool HasCraftBonusTrait()
@@ -6675,6 +6846,10 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 
 	public virtual int GetPrice(CurrencyType currency = CurrencyType.Money, bool sell = false, PriceType priceType = PriceType.Default, Chara c = null)
 	{
+		if (priceType == PriceType.CopyShop && sell)
+		{
+			return 0;
+		}
 		if (!sell)
 		{
 			if (id == "littleball")
@@ -6684,11 +6859,18 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			switch (currency)
 			{
 			case CurrencyType.Ecopo:
-				if (id == "plat")
+			{
+				string text = id;
+				if (!(text == "plat"))
 				{
-					return 500;
+					if (!(text == "whip_egg"))
+					{
+						break;
+					}
+					return 3000;
 				}
-				break;
+				return 500;
+			}
 			case CurrencyType.Plat:
 			{
 				string text = id;

@@ -92,6 +92,8 @@ public class GrowSystem : EClass
 
 	public virtual bool NeedSunlight => true;
 
+	public virtual bool NeedUndersea => false;
+
 	public virtual AnimeID AnimeProgress => AnimeID.HitObj;
 
 	public Stage stage => stages[cell.objVal / 30];
@@ -282,6 +284,17 @@ public class GrowSystem : EClass
 				return false;
 			}
 		}
+		if (NeedUndersea)
+		{
+			if (!EClass._zone.IsUnderwater && !cell.sourceFloor.tileType.IsDeepWater)
+			{
+				return false;
+			}
+		}
+		else if (EClass._zone.IsUnderwater)
+		{
+			return false;
+		}
 		return true;
 	}
 
@@ -320,7 +333,7 @@ public class GrowSystem : EClass
 
 	public void Grow(int mtp = 1)
 	{
-		bool flag = cell.isWatered || (cell.IsTopWater && source.tag.Contains("flood"));
+		bool flag = cell.isWatered || (cell.IsTopWater && (source.tag.Contains("flood") || source.tag.Contains("undersea")));
 		PlantData plantData = EClass._map.TryGetPlant(cell);
 		if (plantData != null && flag)
 		{
@@ -654,7 +667,7 @@ public class GrowSystem : EClass
 			}
 			t.SetNum(num2);
 		}
-		else
+		else if (Application.isEditor)
 		{
 			Debug.Log("harvest count not set:" + source.id + "/" + source.alias);
 		}

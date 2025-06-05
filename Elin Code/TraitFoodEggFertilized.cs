@@ -81,6 +81,8 @@ public class TraitFoodEggFertilized : TraitFoodEgg
 		case "shamo":
 		case "chicken":
 		case "duck":
+		case "penguin":
+		case "penguin_emperor":
 			c.idSkin = 1;
 			break;
 		}

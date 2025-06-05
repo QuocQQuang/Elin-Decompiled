@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public class ELEMENT
 {
+	public const int comfort = 750;
+
 	public const int rare = 751;
 
 	public const int cute = 752;
@@ -13,9 +15,9 @@ public class ELEMENT
 
 	public const int nerve = 754;
 
-	public const int blood = 755;
-
 	public const int hotspring = 756;
+
+	public const int purity = 759;
 
 	public const int stimulant = 760;
 
@@ -23,9 +25,9 @@ public class ELEMENT
 
 	public const int roasted = 762;
 
-	public const int comfort = 750;
+	public const int air = 763;
 
-	public const int purity = 759;
+	public const int blood = 755;
 
 	public const int _void = 0;
 
@@ -73,12 +75,12 @@ public class ELEMENT
 
 	public const int poison = 20;
 
-	public static readonly int[] IDS = new int[34]
+	public static readonly int[] IDS = new int[35]
 	{
-		751, 752, 753, 754, 755, 756, 760, 761, 762, 750,
-		759, 0, 3, 1, 2, 5, 10, 11, 12, 13,
-		14, 16, 17, 18, 15, 21, 22, 23, 24, 25,
-		26, 29, 85, 20
+		750, 751, 752, 753, 754, 756, 759, 760, 761, 762,
+		763, 755, 0, 3, 1, 2, 5, 10, 11, 12,
+		13, 14, 16, 17, 18, 15, 21, 22, 23, 24,
+		25, 26, 29, 85, 20
 	};
 }
 public class Element : EClass
@@ -622,7 +624,7 @@ public class Element : EClass
 					switch (act.id)
 					{
 					case 6902:
-						condition.SetRefVal(79, 267);
+						condition.SetRefVal(79, 268);
 						break;
 					case 8510:
 					case 8710:
@@ -1038,7 +1040,7 @@ public class Element : EClass
 			switch (source.id)
 			{
 			case 6020:
-				result2.cost = c.stamina.max / 3 + 10;
+				result2.cost = Mathf.Min(c.stamina.max / 3 + 10, 30);
 				break;
 			case 6664:
 			{
