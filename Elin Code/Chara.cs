@@ -5223,6 +5223,7 @@ public class Chara : Card, IPathfindWalker
 			}
 			if (EClass._zone.IsNefia)
 			{
+				EClass.player.stats.nefiaBeaten++;
 				EClass._zone.GetTopZone().isConquered = true;
 				EClass.Sound.StopBGM(2f);
 				SE.Play("Jingle/fanfare2");
