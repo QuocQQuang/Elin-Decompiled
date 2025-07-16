@@ -1342,8 +1342,8 @@ public class ActEffect : EClass
 				{
 					if (!item3.IsFriendOrAbove(CC))
 					{
-						int num10 = Dice.Create("SpShutterHex", power, CC, (actRef.refThing != null) ? null : actRef.act).Roll();
-						item3.DamageHP(num10 * hex2, 919, power, AttackSource.None, CC);
+						int num8 = Dice.Create("SpShutterHex", power, CC, (actRef.refThing != null) ? null : actRef.act).Roll();
+						item3.DamageHP(num8 * hex2, 919, power, AttackSource.None, CC);
 					}
 				}
 			});
@@ -1370,8 +1370,14 @@ public class ActEffect : EClass
 			break;
 		}
 		case EffectId.CatSniff:
-			CC.Say("abCatSniff", CC, TC);
+		{
+			Chara nearbyCatToSniff = CC.GetNearbyCatToSniff();
+			if (nearbyCatToSniff != null)
+			{
+				CC.Sniff(nearbyCatToSniff);
+			}
 			break;
+		}
 		case EffectId.Steal:
 		{
 			if (EClass._zone.instance is ZoneInstanceBout)
@@ -1608,13 +1614,13 @@ public class ActEffect : EClass
 				power = power * 2 / 3;
 			}
 			int a2 = power;
-			int num8 = TC.WIL * (isPowerful ? 20 : 5);
+			int num9 = TC.WIL * (isPowerful ? 20 : 5);
 			ConHolyVeil condition = TC.GetCondition<ConHolyVeil>();
 			if (condition != null)
 			{
-				num8 += condition.power * 5;
+				num9 += condition.power * 5;
 			}
-			if (id != EffectId.DebuffKizuami && EClass.rnd(a2) < num8 / EClass.sources.stats.alias[n].hexPower && EClass.rnd(10) != 0)
+			if (id != EffectId.DebuffKizuami && EClass.rnd(a2) < num9 / EClass.sources.stats.alias[n].hexPower && EClass.rnd(10) != 0)
 			{
 				TC.Say("debuff_resist", TC);
 				CC.DoHostileAction(TC);
@@ -1781,12 +1787,12 @@ public class ActEffect : EClass
 		{
 			bool flag7 = id == EffectId.DamageBody || id == EffectId.DamageBodyGreat;
 			bool mind = id == EffectId.DamageMind || id == EffectId.DamageMindGreat;
-			int num9 = ((id == EffectId.DamageBody || id == EffectId.DamageMind) ? 1 : (4 + EClass.rnd(4)));
+			int num10 = ((id == EffectId.DamageBody || id == EffectId.DamageMind) ? 1 : (4 + EClass.rnd(4)));
 			if (id == EffectId.Weaken)
 			{
 				flag7 = EClass.rnd(2) == 0;
 				mind = !flag7;
-				num9 = 1;
+				num10 = 1;
 			}
 			else
 			{
@@ -1794,7 +1800,7 @@ public class ActEffect : EClass
 				TC.PlaySound("debuff");
 			}
 			TC.Say(flag7 ? "damageBody" : "damageMind", TC);
-			for (int l = 0; l < num9; l++)
+			for (int l = 0; l < num10; l++)
 			{
 				TC.DamageTempElements(power, flag7, mind, id != EffectId.Weaken);
 			}

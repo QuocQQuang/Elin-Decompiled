@@ -239,7 +239,10 @@ public class ActMelee : ActBaseAttack
 						List<Point> list2 = new List<Point>();
 						Act.TP.ForeachNeighbor(delegate(Point p)
 						{
-							list2.Add(p.Copy());
+							if (!p.Equals(Act.TP))
+							{
+								list2.Add(p.Copy());
+							}
 						});
 						list2.Shuffle();
 						int num4 = 0;
