@@ -288,7 +288,7 @@ public class ElementContainer : EClass
 				Element element2 = element.GetParent(Card);
 				if (element2.CanGainExp)
 				{
-					ModExp(element2.id, (int)Math.Max(1f, (float)a * element.source.parentFactor / 100f), chain: true);
+					ModExp(element2.id, (int)Math.Max(1f, (float)a * element.source.parentFactor / (float)(100 + Mathf.Max(0, element2.ValueWithoutLink * 5))), chain: true);
 				}
 			}
 		}
