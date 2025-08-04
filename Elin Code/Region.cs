@@ -143,7 +143,7 @@ public class Region : Zone
 		{
 			if (EClass.player.CountKeyItem("license_adv") == 0 && !EClass.debug.enable)
 			{
-				lv = ((EClass.rnd(3) == 0) ? EClass.pc.LV : EClass.pc.FameLv) * (75 + EClass.rnd(50)) / 100 + EClass.rnd(EClass.rnd(10) + 1) - 3;
+				lv = ((EClass.rnd(3) == 0) ? EClass.pc.LV : EClass.pc.Lv) * (75 + EClass.rnd(50)) / 100 + EClass.rnd(EClass.rnd(10) + 1) - 3;
 				if (lv >= 50)
 				{
 					lv = EClass.rndHalf(50);
