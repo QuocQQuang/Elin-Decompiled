@@ -1704,6 +1704,10 @@ public class Chara : Card, IPathfindWalker
 		{
 			base.isHidden = false;
 		}
+		if (source == null)
+		{
+			SetSource();
+		}
 		visibleWithTelepathy = !IsUndead && !IsMachine && !IsHorror;
 		SetDirtySpeed();
 		if (host != null && !calledRecursive)
