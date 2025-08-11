@@ -1687,7 +1687,12 @@ public class Chara : Card, IPathfindWalker
 
 	public void Refresh(bool calledRecursive = false)
 	{
-		if (ride != null)
+		if (source == null)
+		{
+			Debug.LogError("source is null");
+			SetSource();
+		}
+		if (ride != null && ride.source != null)
 		{
 			ride.Refresh(calledRecursive: true);
 		}
@@ -1704,13 +1709,9 @@ public class Chara : Card, IPathfindWalker
 		{
 			base.isHidden = false;
 		}
-		if (source == null)
-		{
-			SetSource();
-		}
 		visibleWithTelepathy = !IsUndead && !IsMachine && !IsHorror;
 		SetDirtySpeed();
-		if (host != null && !calledRecursive)
+		if (host != null && !calledRecursive && host.source != null)
 		{
 			host.Refresh(calledRecursive: true);
 		}
