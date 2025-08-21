@@ -392,7 +392,7 @@ public class FactionBranch : EClass
 				if (luckyMonth || (policies.IsActive(2822) && Mathf.Sqrt(Evalue(2822) / 2) + 5f >= (float)EClass.rnd(100)))
 				{
 					chara = CharaGen.CreateWealthy(ContentLV);
-					EClass._zone.AddCard(chara, EClass._zone.GetSpawnPos(SpawnPosition.Random) ?? EClass._map.GetRandomSurface());
+					EClass._zone.AddCard(chara, EClass._zone.GetSpawnPos(SpawnPosition.Guest) ?? EClass._map.GetRandomSurface());
 				}
 				else
 				{
@@ -830,6 +830,7 @@ public class FactionBranch : EClass
 				{
 					string text = h.source.things[i];
 					int num5 = Mathf.Max(1, h.source.things[i + 1].ToInt() * num3 / 1000);
+					Debug.Log(m.Name + "/" + num3 + "/" + num5);
 					int num6 = num5 / 1000;
 					if (num5 % 1000 > EClass.rnd(1000))
 					{

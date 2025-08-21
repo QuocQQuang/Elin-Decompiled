@@ -1665,6 +1665,17 @@ public class Chara : Card, IPathfindWalker
 		isCreated = true;
 	}
 
+	public Chara ScaleByPrincipal()
+	{
+		if (EClass.game.principal.scaleQuest && EClass._zone.DangerLvBoost != 0)
+		{
+			SetLv(base.LV + EClass._zone.DangerLvBoost);
+			things.DestroyAll();
+			TryRestock(onCreate: true);
+		}
+		return this;
+	}
+
 	public void SetFaith(string id)
 	{
 		SetFaith(EClass.game.religions.dictAll[id]);
@@ -5087,7 +5098,7 @@ public class Chara : Card, IPathfindWalker
 					MakeEgg();
 					if (IsPCFaction)
 					{
-						EClass.Branch.RemoveMemeber(this);
+						homeBranch.RemoveMemeber(this);
 					}
 				}
 				PlayEffect("revive");
@@ -5408,6 +5419,22 @@ public class Chara : Card, IPathfindWalker
 			EClass.Sound.StopBGM(3f);
 			EClass._zone.SetBGM(1, refresh: false);
 			break;
+		case "fairy_raina":
+		case "fairy_poina":
+		{
+			bool num2 = EClass._map.FindChara((id == "fairy_raina") ? "fairy_poina" : "fairy_raina") == null;
+			QuestNasu questNasu = EClass.game.quests.Get<QuestNasu>();
+			if (num2 && questNasu != null && questNasu.phase == 1)
+			{
+				num = 5;
+				flag = (flag2 = true);
+				EClass.Sound.StopBGM(3f);
+				EClass._zone.SetBGM(1, refresh: false);
+				EClass.player.DropReward(ThingGen.Create("backpack_holding"));
+				questNasu.NextPhase();
+			}
+			break;
+		}
 		case "isygarad":
 		{
 			num = 5;
@@ -9225,22 +9252,25 @@ public class Chara : Card, IPathfindWalker
 
 	public void ModHeight(int a)
 	{
-		int height = bio.height;
-		height = height * (100 + a) / 100 + ((a > 0) ? 1 : (-1));
-		if (height < 1)
+		if (!HasElement(450))
 		{
-			height = 1;
-		}
-		if (height != bio.height)
-		{
-			bio.height = height;
-			Say((a > 0) ? "height_gain" : "height_lose", this);
+			int height = bio.height;
+			height = height * (100 + a) / 100 + ((a > 0) ? 1 : (-1));
+			if (height < 1)
+			{
+				height = 1;
+			}
+			if (height != bio.height)
+			{
+				bio.height = height;
+				Say((a > 0) ? "height_gain" : "height_lose", this);
+			}
 		}
 	}
 
 	public void ModWeight(int a, bool ignoreLimit = false)
 	{
-		if (a == 0)
+		if (HasElement(450) || a == 0)
 		{
 			return;
 		}

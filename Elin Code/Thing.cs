@@ -53,6 +53,10 @@ public class Thing : Card
 			if (trait is TraitFakeBlock)
 			{
 				TileType tileType = EClass.sources.blocks.map[base.refVal].tileType;
+				if (tileType is TileTypePillar)
+				{
+					return EClass.core.refs.prefs.blockPillar;
+				}
 				if (tileType is TileTypeFence)
 				{
 					return EClass.core.refs.prefs.blockFence;
@@ -837,7 +841,7 @@ public class Thing : Card
 	{
 		List<Element> list = ListLimitedValidTraits(limit);
 		bool showFoodEnc = base.ShowFoodEnc;
-		bool flag = EClass.pc.HasElement(1650);
+		bool flag = EClass.debug.enable || EClass.pc.HasElement(1650);
 		if (showFoodEnc)
 		{
 			foreach (Element value in elements.dict.Values)
@@ -864,31 +868,32 @@ public class Thing : Card
 		{
 			CheckJustCooked();
 		}
+		string text2 = ((trait is TraitLunchLove) ? "_heart".lang().TagColor(FontColor.Bad) : "");
 		n.Clear();
-		string text2 = "";
+		string text3 = "";
 		TraitAbility traitAbility = trait as TraitAbility;
 		bool showEQStats = base.IsEquipmentOrRangedOrAmmo;
 		bool flag = mode == IInspect.NoteMode.Product;
 		bool flag2 = base.IsIdentified || flag;
-		text2 = base.Name;
+		text3 = base.Name;
 		if (base.rarity == Rarity.Legendary || base.rarity == Rarity.Mythical)
 		{
-			string text3 = (text2.Contains("『") ? "『" : (text2.Contains("《") ? "《" : ""));
-			if (text3 != "")
+			string text4 = (text3.Contains("『") ? "『" : (text3.Contains("《") ? "《" : ""));
+			if (text4 != "")
 			{
-				string[] array = text2.Split(text3);
-				text2 = array[0] + Environment.NewLine + text3 + array[1];
+				string[] array = text3.Split(text4);
+				text3 = array[0] + Environment.NewLine + text4 + array[1];
 			}
 		}
 		if (flag)
 		{
 			if (!(trait is TraitPotionAlchemy))
 			{
-				text2 = recipe.GetName();
+				text3 = recipe.GetName();
 			}
 			if (trait.CraftNum > 1)
 			{
-				text2 = text2 + " x " + trait.CraftNum;
+				text3 = text3 + " x " + trait.CraftNum;
 			}
 		}
 		if (mode != IInspect.NoteMode.Recipe)
@@ -899,55 +904,55 @@ public class Thing : Card
 			}
 			else
 			{
-				UIItem uIItem = n.AddHeaderCard(text2);
+				UIItem uIItem = n.AddHeaderCard(text3);
 				SetImage(uIItem.image2);
 				uIItem.image2.Rect().pivot = new Vector2(0.5f, 0.5f);
-				string text4 = base.Num.ToFormat() ?? "";
-				string text5 = (Mathf.Ceil(0.01f * (float)base.ChildrenAndSelfWeight) * 0.1f).ToString("F1") + "s";
+				string text5 = base.Num.ToFormat() ?? "";
+				string text6 = (Mathf.Ceil(0.01f * (float)base.ChildrenAndSelfWeight) * 0.1f).ToString("F1") + "s";
 				if (things.Count > 0)
 				{
-					text4 = text4 + " (" + things.Count + ")";
+					text5 = text5 + " (" + things.Count + ")";
 				}
 				if (base.ChildrenAndSelfWeight != SelfWeight)
 				{
-					text5 = text5 + " (" + (Mathf.Ceil(0.01f * (float)SelfWeight) * 0.1f).ToString("F1") + "s)";
+					text6 = text6 + " (" + (Mathf.Ceil(0.01f * (float)SelfWeight) * 0.1f).ToString("F1") + "s)";
 				}
-				text2 = "_quantity".lang(text4 ?? "", text5);
+				text3 = "_quantity".lang(text5 ?? "", text6);
 				if (flag && recipe != null && (bool)LayerCraft.Instance)
 				{
-					text2 = text2 + "  " + "_recipe_lv".lang(recipe.RecipeLv.ToString() ?? "");
+					text3 = text3 + "  " + "_recipe_lv".lang(recipe.RecipeLv.ToString() ?? "");
 				}
-				uIItem.text2.SetText(text2);
+				uIItem.text2.SetText(text3);
 				if (showEQStats && flag2)
 				{
-					text2 = "";
+					text3 = "";
 					if (DV != 0 || PV != 0 || base.HIT != 0 || base.DMG != 0 || Penetration != 0)
 					{
 						if (base.DMG != 0)
 						{
-							text2 = text2 + "DMG".lang() + ((base.DMG > 0) ? "+" : "") + base.DMG + ", ";
+							text3 = text3 + "DMG".lang() + ((base.DMG > 0) ? "+" : "") + base.DMG + ", ";
 						}
 						if (base.HIT != 0)
 						{
-							text2 = text2 + "HIT".lang() + ((base.HIT > 0) ? "+" : "") + base.HIT + ", ";
+							text3 = text3 + "HIT".lang() + ((base.HIT > 0) ? "+" : "") + base.HIT + ", ";
 						}
 						if (DV != 0)
 						{
-							text2 = text2 + "DV".lang() + ((DV > 0) ? "+" : "") + DV + ", ";
+							text3 = text3 + "DV".lang() + ((DV > 0) ? "+" : "") + DV + ", ";
 						}
 						if (PV != 0)
 						{
-							text2 = text2 + "PV".lang() + ((PV > 0) ? "+" : "") + PV + ", ";
+							text3 = text3 + "PV".lang() + ((PV > 0) ? "+" : "") + PV + ", ";
 						}
 						if (Penetration != 0)
 						{
-							text2 = text2 + "PEN".lang() + ((Penetration > 0) ? "+" : "") + Penetration + "%, ";
+							text3 = text3 + "PEN".lang() + ((Penetration > 0) ? "+" : "") + Penetration + "%, ";
 						}
-						text2 = text2.TrimEnd(' ').TrimEnd(',');
+						text3 = text3.TrimEnd(' ').TrimEnd(',');
 					}
-					if (!text2.IsEmpty())
+					if (!text3.IsEmpty())
 					{
-						n.AddText("NoteText_eqstats", text2);
+						n.AddText("NoteText_eqstats", text3);
 					}
 					if (trait is TraitToolRange traitToolRange)
 					{
@@ -956,28 +961,28 @@ public class Thing : Card
 				}
 				else
 				{
-					string text6 = "";
+					string text7 = "";
 					if (EClass.debug.showExtra)
 					{
 						int totalQuality = GetTotalQuality();
 						int totalQuality2 = GetTotalQuality(applyBonus: false);
-						text6 = text6 + "Lv. " + base.LV + " TQ. " + GetTotalQuality() + ((totalQuality == totalQuality2) ? "" : (" (" + totalQuality2 + ")"));
+						text7 = text7 + "Lv. " + base.LV + " TQ. " + GetTotalQuality() + ((totalQuality == totalQuality2) ? "" : (" (" + totalQuality2 + ")"));
 					}
 					if (HasElement(10))
 					{
-						text6 = text6 + (text6.IsEmpty() ? "" : "  ") + "_nutrition".lang(Evalue(10).ToFormat() ?? "");
+						text7 = text7 + (text7.IsEmpty() ? "" : "  ") + "_nutrition".lang(Evalue(10).ToFormat() ?? "");
 					}
 					if ((base.category.IsChildOf("throw") || base.category.IsChildOf("resource") || trait.IsTool) && !(trait is TraitAbility))
 					{
-						text6 = text6 + (text6.IsEmpty() ? "" : "  ") + "_hardness".lang(base.material.hardness.ToString() ?? "");
+						text7 = text7 + (text7.IsEmpty() ? "" : "  ") + "_hardness".lang(base.material.hardness.ToString() ?? "");
 					}
 					if (flag && recipe != null && (bool)LayerCraft.Instance)
 					{
-						text6 = text6 + (text6.IsEmpty() ? "" : "  ") + "_max_quality".lang(recipe.GetQualityBonus().ToString() ?? "");
+						text7 = text7 + (text7.IsEmpty() ? "" : "  ") + "_max_quality".lang(recipe.GetQualityBonus().ToString() ?? "");
 					}
-					if (!text6.IsEmpty())
+					if (!text7.IsEmpty())
 					{
-						n.AddText("NoteText_eqstats", text6);
+						n.AddText("NoteText_eqstats", text7);
 					}
 				}
 			}
@@ -1054,9 +1059,9 @@ public class Thing : Card
 		}
 		if (trait.Decay > 0)
 		{
-			string text7 = "";
-			text7 = (base.IsDecayed ? "isRotten" : (base.IsRotting ? "isRotting" : ((!base.IsFresn) ? "isNotFresh" : "isFresh")));
-			AddText(text7.lang(), FontColor.Default);
+			string text8 = "";
+			text8 = (base.IsDecayed ? "isRotten" : (base.IsRotting ? "isRotting" : ((!base.IsFresn) ? "isNotFresh" : "isFresh")));
+			AddText(text8.lang(), FontColor.Default);
 		}
 		if (base.isDyed)
 		{
@@ -1064,8 +1069,8 @@ public class Thing : Card
 		}
 		if (base.IsEquipment)
 		{
-			text2 = "isEquipable".lang(Element.Get(base.category.slot).GetText());
-			AddText(text2, FontColor.Default);
+			text3 = "isEquipable".lang(Element.Get(base.category.slot).GetText());
+			AddText(text3, FontColor.Default);
 		}
 		if (base.isFireproof)
 		{
@@ -1094,10 +1099,6 @@ public class Thing : Card
 		if (flag && HasTag(CTAG.noMix))
 		{
 			AddText("isNoMix", FontColor.Default);
-		}
-		if (trait is TraitFoodFishSlice)
-		{
-			AddText("isNoProcessIng", FontColor.Default);
 		}
 		if (!trait.CanBeDestroyed)
 		{
@@ -1210,9 +1211,17 @@ public class Thing : Card
 		{
 			AddText("isThrowWeaponEnemy", FontColor.Default);
 		}
+		if (trait is TraitFoodFishSlice)
+		{
+			AddText("isNoProcessIng", FontColor.Default);
+		}
 		if (HasElement(10))
 		{
 			AddText("isEdible", FontColor.Default);
+		}
+		if (FoodEffect.IsLeftoverable(this))
+		{
+			AddText("isLeftoverable", FontColor.Default);
 		}
 		if (HasTag(CTAG.rareResource))
 		{
@@ -1273,11 +1282,11 @@ public class Thing : Card
 			{
 				elements.AddNote(n, (Element e) => listTrait.Contains(e), null, ElementContainer.NoteMode.BonusTrait, addRaceFeat: false, delegate(Element e, string s)
 				{
-					string text8 = s;
-					string text9 = e.source.GetText("textExtra");
-					if (!text9.IsEmpty())
+					string text9 = s;
+					string text10 = e.source.GetText("textExtra");
+					if (!text10.IsEmpty())
 					{
-						string text10 = "";
+						string text11 = "";
 						if (e.id == 2 && mode == IInspect.NoteMode.Product)
 						{
 							int num = recipe.GetQualityBonus() / 10;
@@ -1285,18 +1294,18 @@ public class Thing : Card
 							{
 								num++;
 							}
-							text10 = "qualityLimit".lang(num.ToString() ?? "");
+							text11 = "qualityLimit".lang(num.ToString() ?? "");
 						}
 						int num2 = e.Value / 10;
 						num2 = ((e.Value < 0) ? (num2 - 1) : (num2 + 1));
-						text9 = "Lv." + num2 + text10 + " " + text9;
+						text10 = "Lv." + num2 + text11 + " " + text10;
 						if (infoMode && e.IsFoodTraitMain)
 						{
-							text9 += "traitAdditive".lang();
+							text10 += "traitAdditive".lang();
 						}
-						text8 += (" <size=12>" + text9 + "</size>").TagColor(FontColor.Passive);
+						text9 += (" <size=12>" + text10 + "</size>").TagColor(FontColor.Passive);
 					}
-					return text8;
+					return text9;
 				}, delegate
 				{
 				});
@@ -1308,9 +1317,9 @@ public class Thing : Card
 			if (base.c_mixedFoodData != null)
 			{
 				n.AddHeader("isMixedFood");
-				foreach (string text15 in base.c_mixedFoodData.texts)
+				foreach (string text16 in base.c_mixedFoodData.texts)
 				{
-					AddText("_bullet".lang() + text15, FontColor.Default);
+					AddText("_bullet".lang() + text16 + text2, FontColor.Default);
 				}
 			}
 		}
@@ -1329,21 +1338,21 @@ public class Thing : Card
 			{
 				item.AddEncNote(n, this, ElementContainer.NoteMode.BonusTrait, delegate(Element e, string s)
 				{
-					string text11 = s;
-					string text12 = e.source.GetText("textExtra");
-					if (!text12.IsEmpty())
+					string text12 = s;
+					string text13 = e.source.GetText("textExtra");
+					if (!text13.IsEmpty())
 					{
-						string text13 = "";
+						string text14 = "";
 						int num3 = e.Value / 10;
 						num3 = ((e.Value < 0) ? (num3 - 1) : (num3 + 1));
-						text12 = "Lv." + num3 + text13 + " " + text12;
+						text13 = "Lv." + num3 + text14 + " " + text13;
 						if (infoMode && e.IsFoodTraitMain)
 						{
-							text12 += "traitAdditive".lang();
+							text13 += "traitAdditive".lang();
 						}
-						text11 += (" <size=12>" + text12 + "</size>").TagColor(FontColor.Passive);
+						text12 += (" <size=12>" + text13 + "</size>").TagColor(FontColor.Passive);
 					}
-					return text11;
+					return text12;
 				});
 			}
 		}
@@ -1379,9 +1388,9 @@ public class Thing : Card
 			{
 				n.AddHeader("headerAttackEval");
 				AttackProcess.Current.Prepare(chara ?? EClass.pc, this, null, null, 0, base.IsThrownWeapon);
-				string text14 = AttackProcess.Current.GetText();
-				text14 = text14.TagColor(() => true);
-				n.AddText(text14);
+				string text15 = AttackProcess.Current.GetText();
+				text15 = text15.TagColor(() => true);
+				n.AddText(text15);
 			}
 		}
 		if (base.ammoData != null)
@@ -1570,13 +1579,11 @@ public class Thing : Card
 			}
 			break;
 		}
-		if (trait.IdSkin != 0)
+		if (trait.IdSkin != 0 && sourceCard.skins.Length != 0)
 		{
-			int index = trait.IdSkin - 1;
-			if (sourceCard.skins.Length != 0)
-			{
-				p.tile += ((p.tile < 0f) ? (-sourceCard.skins.TryGet(index)) : sourceCard.skins.TryGet(index));
-			}
+			int num6 = sourceCard.skins.TryGet(trait.IdSkin - 1);
+			num6 = num6 / 100 * (int)source.renderData.pass.pmesh.tiling.x + num6 % 100;
+			p.tile += ((p.tile < 0f) ? (-num6) : num6);
 		}
 	}
 

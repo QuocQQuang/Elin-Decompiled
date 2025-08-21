@@ -403,6 +403,8 @@ public class Zone : Spatial, ICardParent, IInspect
 
 	public virtual int StartLV => 0;
 
+	public virtual ZoneScaleType ScaleType => ZoneScaleType.None;
+
 	public virtual bool ScaleMonsterLevel => false;
 
 	public virtual bool HiddenInRegionMap => false;
@@ -422,6 +424,8 @@ public class Zone : Spatial, ICardParent, IInspect
 	}
 
 	public string NameWithLevel => Name + TextLevel(base.lv);
+
+	public string TextDangerLv => "dangerLv".lang(DangerLv + ((DangerLvBoost == 0) ? "" : ("<size=15> +" + DangerLvBoost + "</size>")));
 
 	public string TextDeepestLv
 	{
@@ -499,7 +503,7 @@ public class Zone : Spatial, ICardParent, IInspect
 		}
 	}
 
-	public string InspectName => Name + ((IsTown || IsPCFaction || this is Zone_Civilized) ? "" : "dangerLv".lang(DangerLv.ToString() ?? ""));
+	public string InspectName => Name + ((IsTown || IsPCFaction || this is Zone_Civilized) ? "" : TextDangerLv);
 
 	public Point InspectPoint => null;
 
@@ -530,6 +534,11 @@ public class Zone : Spatial, ICardParent, IInspect
 	public virtual string GetDungenID()
 	{
 		return null;
+	}
+
+	public virtual bool ShouldScaleImportedChara(Chara c)
+	{
+		return false;
 	}
 
 	public virtual string GetNewZoneID(int level)
@@ -1425,7 +1434,7 @@ public class Zone : Spatial, ICardParent, IInspect
 				}
 				if (base.lv == 0)
 				{
-					goto IL_0499;
+					goto IL_04a1;
 				}
 				flag = base.lv <= 0;
 				break;
@@ -1464,7 +1473,7 @@ public class Zone : Spatial, ICardParent, IInspect
 				break;
 			}
 			break;
-			IL_0499:
+			IL_04a1:
 			enterState = ZoneTransition.EnterState.Center;
 		}
 		foreach (Thing thing5 in map.things)
@@ -2649,10 +2658,29 @@ public class Zone : Spatial, ICardParent, IInspect
 		for (int i = 0; i < tries; i++)
 		{
 			point = EClass._map.bounds.GetRandomSurface(centered: false, walkable: true, allowWater: true);
-			if (point.IsValid && !point.cell.hasDoor && !point.IsSync && (type != SpawnPosition.Outside || (!point.cell.HasRoof && point.cell.light <= 0)))
+			if (!point.IsValid || point.cell.hasDoor || point.IsSync)
 			{
-				return point;
+				continue;
 			}
+			switch (type)
+			{
+			case SpawnPosition.Guest:
+			{
+				Room room = point.cell.room;
+				if (room != null && room.data.accessType != 0)
+				{
+					continue;
+				}
+				break;
+			}
+			case SpawnPosition.Outside:
+				if (point.cell.HasRoof || point.cell.light > 0)
+				{
+					continue;
+				}
+				break;
+			}
+			return point;
 		}
 		return null;
 	}
@@ -2699,7 +2727,7 @@ public class Zone : Spatial, ICardParent, IInspect
 			idEle = setting.idEle
 		};
 		int num = ((setting.filterLv == -1) ? dangerLv : setting.filterLv);
-		if (ScaleMonsterLevel)
+		if (ScaleType == ZoneScaleType.Void)
 		{
 			num = ((dangerLv - 1) % 50 + 5) * 150 / 100;
 			if (num >= 20 && EClass.rnd(100) < num)
@@ -2709,10 +2737,11 @@ public class Zone : Spatial, ICardParent, IInspect
 		}
 		CardRow cardRow = (setting.id.IsEmpty() ? spawnList.Select(num, setting.levelRange) : EClass.sources.cards.map[setting.id]);
 		int num2 = ((setting.fixedLv == -1) ? cardRow.LV : setting.fixedLv);
-		if (ScaleMonsterLevel)
+		if (ScaleType == ZoneScaleType.Void)
 		{
 			num2 = (50 + cardRow.LV) * Mathf.Max(1, (dangerLv - 1) / 50);
 		}
+		num2 += DangerLvBoost;
 		if (setting.rarity == Rarity.Random)
 		{
 			if (EClass.rnd(100) == 0)

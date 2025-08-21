@@ -11,6 +11,12 @@ public class CraftUtil : EClass
 		NoMix
 	}
 
+	public enum WrapType
+	{
+		Love,
+		Dark
+	}
+
 	public static string[] ListFoodEffect = new string[2] { "exp", "pot" };
 
 	public static void ModRandomFoodEnc(Thing t)
@@ -65,7 +71,12 @@ public class CraftUtil : EClass
 		int num = Mathf.Min(EClass.rnd(lv), 50);
 		foreach (Recipe.Ingredient ingredient in recipeSource.GetIngredients())
 		{
-			Thing thing = ThingGen.Create(ingredient.id).TryMakeRandomItem(lv);
+			Thing thing = ThingGen.Create(ingredient.id, -1, lv);
+			if (thing.id == "deadbody")
+			{
+				thing = ThingGen.Create("_meat");
+			}
+			thing = thing.TryMakeRandomItem(lv, TryMakeRandomItemSource.Cooking, crafter);
 			TraitSeed.LevelSeed(thing, null, EClass.rnd(lv / 4) + 1);
 			thing.SetEncLv(thing.encLV / 2);
 			if (num > 0 && EClass.rnd(3) == 0)
@@ -94,7 +105,7 @@ public class CraftUtil : EClass
 		for (int i = 0; i < 4 + EClass.rnd(4); i++)
 		{
 			Chara c = EClass._map.charas.RandomItem();
-			AddIngredient(thing, c, GetRandomDarkSoupIngredient(c));
+			WrapIngredient(thing, c, GetRandomDarkSoupIngredient(c), WrapType.Dark);
 		}
 		if (!EClass.debug.autoIdentify)
 		{
@@ -114,15 +125,20 @@ public class CraftUtil : EClass
 		thing.MakeRefFrom(c);
 		int num = c.uid + EClass.world.date.year * 10000 + EClass.world.date.month * 100;
 		Rand.SetSeed(num);
-		int num2 = 3 + EClass.rnd(3);
+		float num2 = Mathf.Clamp(1f + Mathf.Sqrt(c.Evalue(287) / 5), 2f, 6f);
 		if (!EClass.debug.autoIdentify)
 		{
 			thing.c_IDTState = 5;
 		}
-		for (int i = 0; i < num2; i++)
+		for (int i = 0; (float)i < num2; i++)
 		{
 			Rand.SetSeed(num + i);
-			AddIngredient(thing, c, GetRandomLoveLunchIngredient(c), writeCrafter: false);
+			WrapIngredient(thing, c, GetRandomLoveLunchIngredient(c), WrapType.Love);
+		}
+		thing.elements.SetBase(701, 0);
+		if (thing.Evalue(753) < 0)
+		{
+			thing.elements.SetBase(753, 0);
 		}
 		Rand.SetSeed();
 		return thing;
@@ -131,26 +147,25 @@ public class CraftUtil : EClass
 	public static Thing GetRandomLoveLunchIngredient(Chara c)
 	{
 		Thing thing = null;
-		int lV = c.LV;
 		for (int i = 0; i < 3; i++)
 		{
-			thing = ThingGen.Create("dish", -1, lV + i * 3);
+			thing = ThingGen.Create("dish", -1, c.Evalue(287) + 5 + (EClass.debug.enable ? c.LV : 0));
 			if (!thing.HasTag(CTAG.dish_fail))
 			{
 				break;
 			}
 		}
-		MakeDish(thing, lV, c);
+		MakeDish(thing, c.LV, c);
 		return thing;
 	}
 
-	public static void AddIngredient(Card product, Chara c, Card ing, bool writeCrafter = true)
+	public static void WrapIngredient(Card product, Chara c, Card ing, WrapType wrapType)
 	{
 		if (product.c_mixedFoodData == null)
 		{
 			product.c_mixedFoodData = new MixedFoodData();
 		}
-		product.c_mixedFoodData.texts.Add(ing.Name + (writeCrafter ? "isMixedBy".lang(c.NameSimple) : ""));
+		product.c_mixedFoodData.texts.Add(ing.Name + ((wrapType == WrapType.Dark) ? "isMixedBy".lang(c.NameSimple) : ""));
 		foreach (Element value in ing.elements.dict.Values)
 		{
 			if (!IsValidTrait(value))
@@ -160,7 +175,7 @@ public class CraftUtil : EClass
 			if (value.IsFoodTraitMain)
 			{
 				int num = value.Value;
-				if (product.id == "lunch_dystopia")
+				if (ing.id == "lunch_dystopia" && (wrapType == WrapType.Dark || num < 0))
 				{
 					num *= -1;
 				}
@@ -369,7 +384,7 @@ public class CraftUtil : EClass
 				product.elements.SetTo(10, 1);
 			}
 		}
-		if (creative && isFood)
+		if (creative && isFood && product.category.IsChildOf("meal"))
 		{
 			product.elements.SetBase(764, 1);
 		}

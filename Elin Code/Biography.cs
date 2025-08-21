@@ -263,46 +263,57 @@ public class Biography : EClass
 
 	public string nameBirthplace => "birthLoc2".lang(nameHome, nameLoc);
 
-	public int age
+	public bool IsUnderAge(Chara c)
 	{
-		get
-		{
-			return EClass.world.date.year - birthYear;
-		}
-		set
-		{
-			birthYear = EClass.world.date.year - value;
-		}
+		return GetAge(c) < 18;
 	}
-
-	public bool IsUnderAge => age < 18;
 
 	public string TextAge(Chara c)
 	{
-		object obj;
-		if (age < 1000)
+		return Lang.Parse("age", (GetAge(c) >= 1000) ? "???" : (GetAge(c).ToString() ?? ""));
+	}
+
+	public int GetAge(Chara c)
+	{
+		if (c.c_lockedAge != 0)
 		{
-			obj = (c.IsUnique ? GetOriginalAge(c) : age).ToString();
-			if (obj == null)
+			return c.c_lockedAge - 1;
+		}
+		if (c.IsUnique)
+		{
+			string[] array = c.source.bio.Split('/');
+			if (array.Length > 1)
 			{
-				return "";
+				return int.Parse(array[1]);
 			}
+		}
+		return EClass.world.date.year - birthYear;
+	}
+
+	public void SetAge(Chara c, int a)
+	{
+		if (c.IsUnique)
+		{
+			c.c_lockedAge = a + 1;
+			string[] array = c.source.bio.Split('/');
+			if (array.Length > 1)
+			{
+				SetBirthYear(c, int.Parse(array[1]));
+			}
+		}
+		else if (c.c_lockedAge == 0)
+		{
+			SetBirthYear(c, a);
 		}
 		else
 		{
-			obj = "???";
+			c.c_lockedAge = a + 1;
 		}
-		return (string)obj;
 	}
 
-	public int GetOriginalAge(Chara c)
+	public void SetBirthYear(Chara c, int a)
 	{
-		string[] array = c.source.bio.Split('/');
-		if (array.Length > 1)
-		{
-			return int.Parse(array[1]);
-		}
-		return age;
+		birthYear = EClass.world.date.year - a;
 	}
 
 	public void Generate(Chara c)
@@ -337,7 +348,7 @@ public class Biography : EClass
 				{
 					flag = false;
 				}
-				age = int.Parse(array[1]);
+				SetBirthYear(c, int.Parse(array[1]));
 				c.pccData = IO.LoadFile<PCCData>(CorePath.packageCore + "Data/PCC/" + c.id + ".txt");
 			}
 			if (array.Length > 2)
@@ -365,9 +376,9 @@ public class Biography : EClass
 		{
 			SetPortrait(c);
 		}
-		if (c.id == "prostitute" && age < 15)
+		if (c.id == "prostitute" && GetAge(c) < 15)
 		{
-			age = 15;
+			SetBirthYear(c, 15);
 		}
 		SourceThing.Row row = EClass.sources.things.rows.RandomItem();
 		idLike = row.id;
@@ -395,11 +406,11 @@ public class Biography : EClass
 		if (ageIndex != 0)
 		{
 			int num3 = (num2 - num) / 4;
-			age = Rand.Range(num + num3 * (ageIndex - 1), num + num3 * ageIndex);
+			SetBirthYear(c, Rand.Range(num + num3 * (ageIndex - 1), num + num3 * ageIndex));
 		}
 		else
 		{
-			age = Rand.Range(num, num2);
+			SetBirthYear(c, Rand.Range(num, num2));
 		}
 		birthDay = EClass.rnd(30) + 1;
 		birthMonth = EClass.rnd(12) + 1;
@@ -487,7 +498,7 @@ public class Biography : EClass
 
 	public string TextBio(Chara c)
 	{
-		return c.race.GetText().ToTitleCase(wholeText: true) + " " + Lang.Parse("age", TextAge(c)) + " " + Lang._gender(gender);
+		return c.race.GetText().ToTitleCase(wholeText: true) + " " + TextAge(c) + " " + Lang._gender(gender);
 	}
 
 	public string TextBio2(Chara c)
@@ -497,12 +508,12 @@ public class Biography : EClass
 
 	public string TextBioSlave(Chara c)
 	{
-		return " (" + Lang.GetList("genders_animal")[c.bio.gender] + " " + "age".lang(c.bio.TextAge(c)) + ")";
+		return " (" + Lang.GetList("genders_animal")[c.bio.gender] + " " + TextAge(c) + ")";
 	}
 
 	public string TextBirthDate(Chara c, bool _age = false)
 	{
-		return Lang.Parse("birthText", (birthYear >= 0) ? (birthYear.ToString() ?? "") : "???", birthMonth.ToString() ?? "", birthDay.ToString() ?? "") + (_age ? (" (" + Lang.Parse("age", TextAge(c)) + ")") : "");
+		return Lang.Parse("birthText", (birthYear >= 0) ? (birthYear.ToString() ?? "") : "???", birthMonth.ToString() ?? "", birthDay.ToString() ?? "") + (_age ? (" (" + TextAge(c) + ")") : "");
 	}
 
 	public string TextAppearance()
