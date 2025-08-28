@@ -28,7 +28,7 @@ public class ActThrow : ActBaseAttack
 		{
 			Act.TP.Set(pcTarget.pos);
 		}
-		if (!Act.TP.IsHidden)
+		if (!Act.TP.IsHidden && !Act.TP.IsSky)
 		{
 			return Act.CC.CanSeeLos(Act.TP);
 		}
@@ -226,7 +226,7 @@ public class ActThrow : ActBaseAttack
 			TraitMonsterBall traitMonsterBall = t.trait as TraitMonsterBall;
 			if (traitMonsterBall.chara != null)
 			{
-				if (traitMonsterBall.IsLittleBall && !(EClass._zone is Zone_LittleGarden))
+				if (traitMonsterBall.IsLittleBall && !(EClass._zone is Zone_LittleGarden) && !EClass.game.IsSurvival)
 				{
 					break;
 				}

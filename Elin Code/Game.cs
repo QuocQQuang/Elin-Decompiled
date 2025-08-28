@@ -220,6 +220,9 @@ public class Game : EClass
 	[JsonProperty]
 	public GamePrincipal principal = new GamePrincipal();
 
+	[JsonProperty]
+	public SurvivalManager survival;
+
 	public int gameSpeedIndex = 1;
 
 	public int lastGameSpeedIndex = 1;
@@ -265,6 +268,8 @@ public class Game : EClass
 	public bool altCraft => EClass.core.config.game.altCraft;
 
 	public bool altAbility => EClass.core.config.game.altAbility;
+
+	public bool IsSurvival => Prologue.type == GameType.Survival;
 
 	public Zone StartZone => spatials.Find(EClass.game.Prologue.idStartZone);
 
@@ -774,8 +779,15 @@ public class Game : EClass
 		EClass.pc.SetGlobal();
 		parties.Create(EClass.pc);
 		Prologue prologue = EClass.game.Prologue;
-		CharaGen.Create("fiama").SetGlobal(EClass.game.StartZone, prologue.posFiama.x, prologue.posFiama.y);
-		CharaGen.Create("ashland").SetGlobal(EClass.game.StartZone, prologue.posAsh.x, prologue.posAsh.y);
+		if (prologue.type == GameType.Survival)
+		{
+			survival = new SurvivalManager();
+		}
+		else
+		{
+			CharaGen.Create("fiama").SetGlobal(EClass.game.StartZone, prologue.posFiama.x, prologue.posFiama.y);
+			CharaGen.Create("ashland").SetGlobal(EClass.game.StartZone, prologue.posAsh.x, prologue.posAsh.y);
+		}
 		if ((bool)LayerTitle.actor)
 		{
 			world.date.hour = EClass.game.Prologue.hour;
@@ -818,6 +830,16 @@ public class Game : EClass
 				break;
 			case CoreDebug.StartScene.Home:
 			case CoreDebug.StartScene.Story_Test:
+				zone5 = EClass.game.spatials.Find(EClass.game.Prologue.idStartZone);
+				transition = new ZoneTransition
+				{
+					state = ZoneTransition.EnterState.Exact,
+					x = EClass.game.Prologue.startX,
+					z = EClass.game.Prologue.startZ
+				};
+				break;
+			case CoreDebug.StartScene.Survival:
+				EClass.game.idPrologue = 3;
 				zone5 = EClass.game.spatials.Find(EClass.game.Prologue.idStartZone);
 				transition = new ZoneTransition
 				{

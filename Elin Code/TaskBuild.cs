@@ -368,20 +368,23 @@ public class TaskBuild : TaskBaseBuild
 				_ = (item.trait as TraitNewZone).IsDownstairs;
 			}
 		}
-		if (ActionMode.Build.IsActive && ActionMode.Build.IsRoofEditMode())
+		if (!ActionMode.Build.IsActive || !ActionMode.Build.IsRoofEditMode())
 		{
-			return;
-		}
-		pos.ForeachMultiSize(recipe.W, recipe.H, delegate(Point p, bool center)
-		{
-			if (p.IsBlocked && p.HasChara)
+			pos.ForeachMultiSize(recipe.W, recipe.H, delegate(Point p, bool center)
 			{
-				foreach (Chara item2 in p.ListCharas())
+				if (p.IsBlocked && p.HasChara)
 				{
-					EClass.pc.Kick(item2, ignoreSelf: true, karmaLoss: false, show: false);
+					foreach (Chara item2 in p.ListCharas())
+					{
+						EClass.pc.Kick(item2, ignoreSelf: true, karmaLoss: false, show: false);
+					}
 				}
-			}
-		});
+			});
+		}
+		if (EClass.game.IsSurvival && EClass._zone is Zone_StartSiteSky)
+		{
+			EClass.game.survival.OnExpandFloor(pos);
+		}
 	}
 
 	public override void OnDestroy()

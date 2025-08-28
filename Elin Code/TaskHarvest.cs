@@ -70,6 +70,18 @@ public class TaskHarvest : BaseTaskHarvest
 		}
 	}
 
+	public override bool Loop
+	{
+		get
+		{
+			if (EClass.game.IsSurvival && EClass._zone is Zone_StartSite)
+			{
+				return CanProgress();
+			}
+			return false;
+		}
+	}
+
 	public override bool CanManualCancel()
 	{
 		return true;

@@ -3950,34 +3950,42 @@ public class Chara : Card, IPathfindWalker
 				EClass.player.returnInfo.turns--;
 				if (EClass.player.returnInfo.turns <= 0)
 				{
-					if (EClass.pc.burden.GetPhase() != 4 || EClass.debug.ignoreWeight)
+					if (EClass.game.IsSurvival && EClass._zone.GetTopZone() is Zone_StartSiteSky)
 					{
-						int uidDest = EClass.player.returnInfo.uidDest;
-						Zone zone = null;
-						if (uidDest != 0)
+						EClass.player.returnInfo = null;
+						Msg.SayNothingHappen();
+					}
+					else
+					{
+						if (EClass.pc.burden.GetPhase() != 4 || EClass.debug.ignoreWeight)
 						{
-							zone = EClass.game.spatials.map.TryGetValue(uidDest) as Zone;
-						}
-						if (zone == null || zone.destryoed)
-						{
-							zone = EClass.world.region;
-						}
-						if (zone == EClass.game.activeZone || EClass.game.activeZone.IsRegion)
-						{
-							Msg.Say("returnFail");
-						}
-						else
-						{
-							Msg.Say("returnComplete");
-							EClass.player.uidLastTravelZone = 0;
-							EClass.pc.MoveZone(zone, ZoneTransition.EnterState.Return);
-							EClass.player.lastZonePos = null;
+							int uidDest = EClass.player.returnInfo.uidDest;
+							Zone zone = null;
+							if (uidDest != 0)
+							{
+								zone = EClass.game.spatials.map.TryGetValue(uidDest) as Zone;
+							}
+							if (zone == null || zone.destryoed)
+							{
+								zone = EClass.world.region;
+							}
+							if (zone == EClass.game.activeZone || EClass.game.activeZone.IsRegion)
+							{
+								Msg.Say("returnFail");
+							}
+							else
+							{
+								Msg.Say("returnComplete");
+								EClass.player.uidLastTravelZone = 0;
+								EClass.pc.MoveZone(zone, ZoneTransition.EnterState.Return);
+								EClass.player.lastZonePos = null;
+							}
+							EClass.player.returnInfo = null;
+							return;
 						}
 						EClass.player.returnInfo = null;
-						return;
+						Msg.Say("returnOverweight");
 					}
-					EClass.player.returnInfo = null;
-					Msg.Say("returnOverweight");
 				}
 			}
 			if ((HasNoGoal || !ai.IsRunning) && !WillConsumeTurn())
@@ -4766,6 +4774,10 @@ public class Chara : Card, IPathfindWalker
 		if (trait is TraitBard)
 		{
 			AddThing(ThingGen.Create("lute"));
+			if (EClass.debug.enable || EClass.rnd(50) == 0)
+			{
+				EQ_ID("shield_lute");
+			}
 		}
 	}
 
@@ -5361,10 +5373,7 @@ public class Chara : Card, IPathfindWalker
 			chara.MakeMinion((origin.IsPCParty || origin.IsPCPartyMinion) ? EClass.pc : origin.Chara, MinionType.Friend);
 			Msg.Say("plant_pop", this, chara);
 		}
-		foreach (ZoneEvent item in EClass._zone.events.list)
-		{
-			item.OnCharaDie(this);
-		}
+		EClass._zone.events.OnCharaDie(this);
 	}
 
 	public void TryDropBossLoot()
@@ -6330,9 +6339,9 @@ public class Chara : Card, IPathfindWalker
 	{
 		CardRenderer cardRenderer = renderer;
 		CharaRenderer charaRenderer = new CharaRenderer();
-		if (race.id == "spider" && source.tiles.Length > 1)
+		if (source.skinAntiSpider != 0 && EClass.core.config.game.antiSpider)
 		{
-			base.idSkin = (EClass.core.config.game.antiSpider ? 1 : 0);
+			base.idSkin = source.skinAntiSpider;
 		}
 		if (host != null)
 		{
@@ -6799,9 +6808,9 @@ public class Chara : Card, IPathfindWalker
 				break;
 			}
 			case "farris":
-				if (EClass._zone.id == "startVillage" || EClass._zone.id == "startVillage3")
+				if (EClass._zone.id == "startVillage" || EClass._zone.id == "startVillage3" || EClass.game.IsSurvival)
 				{
-					ShowDialog("_chara");
+					ShowDialog("farris");
 					return;
 				}
 				switch (EClass.game.quests.GetPhase<QuestExploration>())
@@ -6816,7 +6825,7 @@ public class Chara : Card, IPathfindWalker
 					ShowDialog("farris", "home_first");
 					break;
 				default:
-					ShowDialog("_chara");
+					ShowDialog("farris");
 					break;
 				}
 				return;
@@ -8034,13 +8043,6 @@ public class Chara : Card, IPathfindWalker
 				{
 					continue;
 				}
-				if (Dist(chara) < 5)
-				{
-					chara.GoHostile(attacker);
-					chara.SetEnemy(attacker);
-					attacker.SetEnemy(chara);
-					continue;
-				}
 				Point nearestPoint = pos.GetNearestPoint(allowBlock: false, allowChara: false, allowInstalled: true, ignoreCenter: true);
 				if (!nearestPoint.IsValid)
 				{
@@ -8407,6 +8409,31 @@ public class Chara : Card, IPathfindWalker
 			return new GoalGraze();
 		}
 		return new GoalHobby();
+	}
+
+	public bool HasHobbyOrWork(string alias)
+	{
+		int num = EClass.sources.hobbies.alias.TryGetValue(alias)?.id ?? 0;
+		listHobby.Clear();
+		if (_works == null || _hobbies == null)
+		{
+			RerollHobby();
+		}
+		foreach (int work in _works)
+		{
+			if (work == num)
+			{
+				return true;
+			}
+		}
+		foreach (int hobby in _hobbies)
+		{
+			if (hobby == num)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public void SetAIIdle()

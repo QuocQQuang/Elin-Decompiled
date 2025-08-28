@@ -190,10 +190,10 @@ public class ThingGen : CardGen
 		return thing;
 	}
 
-	public static Thing CreateRod(int ele)
+	public static Thing CreateRod(int ele, int charge = -1)
 	{
 		Thing thing = Create("rod");
-		TraitRod.Create(thing, ele);
+		TraitRod.Create(thing, ele, charge);
 		return thing;
 	}
 
@@ -276,6 +276,14 @@ public class ThingGen : CardGen
 				t.Add("book_skill", 1, lv);
 			}
 			t.c_lockLv /= 2;
+			break;
+		case TreasureType.SurvivalRaid:
+			t.Add("plat", EClass.rndHalf(Mathf.Min(3 + num / 10, 15)));
+			t.Add("money2", EClass.rndHalf(Mathf.Min(3 + num / 10, 10)));
+			t.Add("medal", EClass.rndHalf(8));
+			t.Add("book_skill", 1, lv);
+			t.Add("book_skill", 1, lv);
+			t.c_lockLv /= 3;
 			break;
 		case TreasureType.RandomChest:
 			flag2 = false;

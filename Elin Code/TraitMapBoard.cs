@@ -52,16 +52,19 @@ public class TraitMapBoard : TraitBoard
 			uIContextMenu2.Show();
 			return false;
 		}, owner);
-		p.TrySetAct("actChangeSkyBlockHeight", delegate
+		if (EClass._zone.IsSkyLevel)
 		{
-			UIContextMenu uIContextMenu3 = EClass.ui.CreateContextMenuInteraction();
-			uIContextMenu3.AddSlider("adjustment", (float a) => a.ToString() ?? "", EClass._map.config.skyBlockHeight, delegate(float b)
+			p.TrySetAct("actChangeSkyBlockHeight", delegate
 			{
-				EClass._map.config.skyBlockHeight = (int)b;
-			}, 1f, 20f, isInt: true, hideOther: false);
-			uIContextMenu3.Show();
-			return false;
-		}, owner);
+				UIContextMenu uIContextMenu3 = EClass.ui.CreateContextMenuInteraction();
+				uIContextMenu3.AddSlider("adjustment", (float a) => a.ToString() ?? "", EClass._map.config.skyBlockHeight, delegate(float b)
+				{
+					EClass._map.config.skyBlockHeight = (int)b;
+				}, 1f, 20f, isInt: true, hideOther: false);
+				uIContextMenu3.Show();
+				return false;
+			}, owner);
+		}
 		p.TrySetAct("actChangeMapBG", delegate
 		{
 			LayerList layerList = EClass.ui.AddLayer<LayerList>().SetSize(400f);

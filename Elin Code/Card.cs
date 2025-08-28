@@ -6571,7 +6571,7 @@ public class Card : BaseCard, IReservable, ICardParent, IRenderSource, IGlobalVa
 			if (MOD.tones.all.ContainsKey(key))
 			{
 				StringBuilder stringBuilder = MOD.tones.ApplyTone(key, ref text, gender);
-				if (Lang.isJP && c != null && c.trait.EnableTone)
+				if (Lang.isJP && c != null)
 				{
 					if (array.Length >= 2)
 					{

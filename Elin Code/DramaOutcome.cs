@@ -146,9 +146,9 @@ public class DramaOutcome : EMono
 	public void QuestDefense_0()
 	{
 		Prologue prologue = EMono.game.Prologue;
-		Card card = EMono._zone.AddChara("punk", prologue.posPunk.x, prologue.posPunk.y);
-		card.things.DestroyAll();
-		(EMono._zone.AddThing("gallows", prologue.posPunk.x, prologue.posPunk.y).Install().trait as TraitShackle).Restrain(card);
+		Chara chara = EMono._zone.AddChara("punk", prologue.posPunk.x, prologue.posPunk.y);
+		chara.things.DestroyAll();
+		(EMono._zone.AddThing("gallows", prologue.posPunk.x, prologue.posPunk.y).Install().trait as TraitShackle).Restrain(chara);
 		CardBlueprint.SetNormalRarity();
 	}
 
@@ -160,7 +160,7 @@ public class DramaOutcome : EMono
 	public void QuestDefense_1()
 	{
 		Prologue prologue = EMono.game.Prologue;
-		Card tc = EMono._zone.AddChara("boar", prologue.posPunk.x + 1, prologue.posPunk.y);
+		Chara tc = EMono._zone.AddChara("boar", prologue.posPunk.x + 1, prologue.posPunk.y);
 		(EMono._zone.AddThing("gallows", prologue.posPunk.x + 1, prologue.posPunk.y).Install().trait as TraitShackle).Restrain(tc);
 		EMono.player.DropReward(ThingGen.Create("stone").SetNum(20));
 		EMono.player.DropReward(ThingGen.Create("330").SetNum(3), silent: true).Identify(show: false);
@@ -383,7 +383,7 @@ public class DramaOutcome : EMono
 
 	public void guild_trial()
 	{
-		if (Guild.Current == EMono.game.factions.Merchant)
+		if (Guild.CurrentDrama == EMono.game.factions.Merchant)
 		{
 			EMono.game.quests.Start("guild_merchant", cc, assignQuest: false);
 		}
@@ -395,14 +395,14 @@ public class DramaOutcome : EMono
 
 	public void guild_join()
 	{
-		if (Guild.Current != EMono.game.factions.Merchant)
+		if (Guild.CurrentDrama != EMono.game.factions.Merchant)
 		{
 			(cc.trait as TraitGuildDoorman).OnJoinGuild();
 		}
-		Msg.Say("guild_join", Guild.Current.Name);
+		Msg.Say("guild_join", Guild.CurrentDrama.Name);
 		SE.Play("questComplete");
-		Guild.Current.relation.type = FactionRelation.RelationType.Member;
-		Guild.CurrentQuest.ChangePhase(10);
+		Guild.CurrentDrama.relation.type = FactionRelation.RelationType.Member;
+		Guild.CurrentDrama?.Quest.ChangePhase(10);
 	}
 
 	public void guild_mageTrial()
@@ -413,7 +413,7 @@ public class DramaOutcome : EMono
 
 	public void guild_promote()
 	{
-		Guild.Current.relation.Promote();
+		Guild.CurrentDrama.relation.Promote();
 		Guild.GetCurrentGuild()?.RefreshDevelopment();
 	}
 

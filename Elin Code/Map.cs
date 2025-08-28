@@ -314,7 +314,7 @@ public class Map : MapBounds, IPathfindGrid
 		string id = Game.id;
 		EClass.game.Save();
 		EClass.scene.Init(Scene.Mode.None);
-		Game.Load(id, EClass.game.isCloud);
+		Game.Load(id, cloud: false);
 		RevealAll();
 		TweenUtil.Tween(0.1f, null, delegate
 		{
@@ -450,26 +450,26 @@ public class Map : MapBounds, IPathfindGrid
 				num6++;
 			}
 		}
-		compression = IO.Compression.None;
-		IO.WriteLZ4(path + "objVals", array);
-		IO.WriteLZ4(path + "blocks", array2);
-		IO.WriteLZ4(path + "blockMats", array3);
-		IO.WriteLZ4(path + "floors", array4);
-		IO.WriteLZ4(path + "floorMats", array5);
-		IO.WriteLZ4(path + "objs", array6);
-		IO.WriteLZ4(path + "objMats", array7);
-		IO.WriteLZ4(path + "decal", array8);
-		IO.WriteLZ4(path + "flags", array10);
-		IO.WriteLZ4(path + "flags2", array11);
-		IO.WriteLZ4(path + "dirs", array9);
-		IO.WriteLZ4(path + "heights", array12);
-		IO.WriteLZ4(path + "bridges", array13);
-		IO.WriteLZ4(path + "bridgeMats", array14);
-		IO.WriteLZ4(path + "bridgeHeights", array15);
-		IO.WriteLZ4(path + "bridgePillars", array16);
-		IO.WriteLZ4(path + "roofBlocks", array18);
-		IO.WriteLZ4(path + "roofBlockMats", array19);
-		IO.WriteLZ4(path + "roofBlockDirs", array17);
+		compression = ((!EClass.core.config.test.compressSave) ? IO.Compression.None : IO.Compression.LZ4);
+		Write(path + "objVals", array);
+		Write(path + "blocks", array2);
+		Write(path + "blockMats", array3);
+		Write(path + "floors", array4);
+		Write(path + "floorMats", array5);
+		Write(path + "objs", array6);
+		Write(path + "objMats", array7);
+		Write(path + "decal", array8);
+		Write(path + "flags", array10);
+		Write(path + "flags2", array11);
+		Write(path + "dirs", array9);
+		Write(path + "heights", array12);
+		Write(path + "bridges", array13);
+		Write(path + "bridgeMats", array14);
+		Write(path + "bridgeHeights", array15);
+		Write(path + "bridgePillars", array16);
+		Write(path + "roofBlocks", array18);
+		Write(path + "roofBlockMats", array19);
+		Write(path + "roofBlockDirs", array17);
 		things.Sort((Thing a, Thing b) => a.stackOrder - b.stackOrder);
 		if (export == null)
 		{
@@ -526,6 +526,10 @@ public class Map : MapBounds, IPathfindGrid
 			things = list;
 		}
 		serializedCharas.Clear();
+		void Write(string _path, byte[] bytes)
+		{
+			IO.WriteLZ4(_path, bytes, compression);
+		}
 	}
 
 	public byte[] TryLoadFile(string path, string s, int size)
@@ -1883,6 +1887,15 @@ public class Map : MapBounds, IPathfindGrid
 				if (cell.HasBlock && (sourceObj.id == 18 || sourceObj.id == 19))
 				{
 					MineBlock(point, recoverBlock: false, c, mineObj: false);
+				}
+				if (EClass.game.IsSurvival && EClass._zone is Zone_StartSiteSky && !EClass.scene.actionMode.IsBuildMode)
+				{
+					if (EClass.game.survival.OnMineWreck(point))
+					{
+						Rand.SetSeed();
+						return;
+					}
+					Rand.SetSeed();
 				}
 				switch (sourceObj.alias)
 				{
